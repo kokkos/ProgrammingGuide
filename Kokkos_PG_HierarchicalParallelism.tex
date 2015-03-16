@@ -1,5 +1,15 @@
-
 \chapter{Hierarchical Parallelism}\label{C:Hierarchical}
+
+This chapter explains how to use Kokkos to exploit multiple levels of shared-memory parallelism.
+These levels include thread teams, threads within a team, and vector lanes.
+You may nest these levels of parallelism,
+and execute \lstinline!parallel_for!, \lstinline!parallel_reduce!, or \lstinline!parallel_scan! at each level.
+The syntax differs only by the execution policy,
+which is the first argument to the \verb!parallel_*! operation.
+Kokkos also exposes a ``scratch pad'' memory which all threads within a team may share.
+
+\section{Motivation}\label{S:Hierarchical:Motivation}
+
 Node architectures on modern high-performance computers are characterized by ever more \emph{hierarchical parallelism}. 
 A level in the hierachy is determined by the hardware resources which are shared between compute units at that level. 
 Higher levels in the hierarchy also have access to all resources in its branch at lower levels of the hierarchy.
@@ -19,14 +29,15 @@ GPU-based systems also have a hierarchy of 4 levels:
 \item threads running on the same core cluster have access to the same L1 cache and scratch memory and they are 
 \item grouped in so called Warps or Wave Fronts within which threads are always synchronous and can collaborate more closely for example via direct register swapping. 
 \end{enumerate}
-Kokkos provides a number of abstract levels of parallelism which at compile time or run time are mapped to the appropriate hardware features. 
+Kokkos provides a number of abstract levels of parallelism,
+which it maps to the appropriate hardware features.
 This mapping is not necessarily static or predefined; it may differ for each kernel.
 Furthermore, some mapping decisions happen at run time. 
 This enables adaptive kernels which map work to different hardware resources depending on the work set size.
 While Kokkos provides defaults and suggestions, the optimal mapping can be algorithm dependent. 
 Hierarchical parallelism is accessible through execution policies.
 
-\section{Thread Teams Basics}
+\section{Thread teams}\label{S:Hierarchical:Teams}
 
 Kokkos' most basic hierarchical parallelism concept is a thread team.
 A \emph{thread team} is a collection of threads which can synchronize,
@@ -44,7 +55,7 @@ and they must run to completion before new ones are executed.
 Consequently it is not valid to use inter thread-team synchronization mechanisms
 such as waits for events initiated by other thread teams. 
 
-\subsection{Creating a Policy Instance}
+\subsection{Creating a Policy Instance}\label{SS:Hierarchical:Teams:Policy}
 
 Kokkos exposes use of thread teams with the \lstinline!Kokkos::TeamPolicy! execution policy.
 To use thread teams you need to create a \lstinline|Kokkos::TeamPolicy| instance.
@@ -67,7 +78,8 @@ Kokkos::TeamPolicy<SomeTag, ExecutionSpace>
         policy( league_size, team_size ); 
 \end{lstlisting}
  
-\subsection{Basic Kernels}
+\subsection{Basic Kernels}\label{SS:Hierarchical:Teams:Kernels}
+
 Within the kernel the team policy member type provides the necessary functionality to use teams. 
 It allows access to thread identifiers such as league rank and size and team rank and size, as well as team synchronous actions such as team barriers, reductions and scans.
 \begin{lstlisting}
@@ -91,7 +103,9 @@ parallel_for (policy, KOKKOS_LAMBDA (member_type team_member) {
 
 This approach of writing hierarchical parallelism algorithms makes it very explicit that a kernel using a \lstinline!TeamPolicy! constitutes a parallel region with respect to the team.
 
-\section{Team Scratch Pads}\label{S:Hierarchical:Scratch}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Team scratch pad memory}\label{S:Hierarchical:Scratch}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Each Kokkos team has a ``scratch pad.''
 This is an instance of a memory space accessible only by threads in that team.
@@ -172,8 +186,9 @@ Kokkos::parallel_for(Kokkos::TeamPolicy<>(league_size,team_size),
 });
 \end{lstlisting}
 
-
-\section{Nested Parallelism}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Nested parallelism}\label{S:Hierarchical:Nested}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Instead of writing code which explicitly uses league and team rank indices, one can use nested parallelism to implement hierarchical algorithms.
 Kokkos lets the user have up to three nested layers of parallelism.
@@ -185,7 +200,7 @@ You may nest them and use them in conjunction with code that is aware of the lea
 The different layers are accessible via special execution policies:
 \lstinline|TeamThreadLoop| and \lstinline|ThreadVectorLoop|. 
 
-\subsection{Team and Vector Loops}
+\subsection{Team and vector loops}\label{SS:Hierarchical:Nested:Loops}
 
 The first nested level of parallel loops splits an index range over the threads of a team. 
 This motivates the policy name \lstinline|TeamThreadRange|, 
@@ -245,8 +260,6 @@ parallel_for (TeamPolicy<> (league_size, team_size),
 \end{lstlisting}
 
 The third pattern is \lstinline|parallel_scan| which can be used to perform prefix scans.
-
-
 
 \subsection{Execution Restriction with \lstinline|single|}
 
