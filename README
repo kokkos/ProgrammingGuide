@@ -1,0 +1,5 @@
+This repository contains the current working draft of the Kokkos
+Programming Guide.  The Guide is written in LaTeX.  In order to build
+a PDF of the Guide, run the following command 2-3 times:
+
+$ pdflatex Kokkos_PG
