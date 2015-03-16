@@ -1,0 +1,29 @@
+
+
+\chapter{Introduction}\label{C:intro}
+
+The field of High Performance Computing (HPC) is entering a new era.
+Since the mid 1990's, HPC applications have had great success 
+with distributed-memory parallel computing using the Message-Passing Interface (MPI).
+However, after two decades of MPI dominance, 
+increasing core counts on standard processors and the emergence of new throughput-oriented processors, such as GPUs, make a new approach necessary.
+MPI will not necessarily go away,
+but application developers will need to expose finer-grained shared-memory parallelism
+\emph{as well as} coarser-grained MPI-level parallelism,
+in order to get their money's worth on new architectures.
+
+Developers have many shared-memory parallel programming model options today.
+Those include OpenMP, OpenACC, CUDA, TBB, Cilk, OpenCL, and C++AMP, among others.
+Some of these programming models are vendor specific, while others have varying degrees of support on different hardware. 
+Most of the models lack a concept to handle complex memory hierarchies, 
+which in addition to threading is one of the defining upcoming trends in HPC. 
+
+The Kokkos programming model addresses the increasing complexity and variety of hardware architectures
+through a rigorous introduction of parallel execution and memory handling abstractions.
+These abstraction layers isolate a software developer from hardware details and allow the implementation of performance-portable applications.
+
+This Guide covers both the programming model, and its implementation as an embedded C++ library.
+It describes the abstraction concepts employed in Kokkos and their exposure as a C++ interface.
+We intend it as an introduction for new users as well as a reference for application developers already using Kokkos.
+We have also supplemented the Guide with tutorial examples in the \verb!example! subdirectory of Kokkos' source code.
+

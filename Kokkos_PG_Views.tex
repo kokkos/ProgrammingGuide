@@ -1,0 +1,492 @@
+\chapter{View: Multidimensional array}
+
+After reading this chapter, you should understand the following:
+\begin{itemize}
+\item A Kokkos View is an array of zero or more dimensions
+\item How to use View's first template parameter to specify the type
+  of entries, the number of dimensions, and whether the dimensions are
+  determined at run time or compile time
+\item Kokkos handles array deallocation automatically
+\item Kokkos chooses array layout at compile time for best overall
+  performance, as a function of the computer architecture
+\item How to set optional template parameters of View for low-level
+  control of execution space, layout, and how Kokkos accesses array
+  entries
+\end{itemize}
+In all code examples in this chapter, we assume that all classes in
+the \lstinline!Kokkos! namespace have been imported into the working
+namespace.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Why Kokkos needs multidimensional arrays}\label{S:Views:Why}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Many scientific and engineering codes spend a lot of time computing
+with arrays of data.  Programmers invest a lot of effort making array
+computations as fast as possible.  This effort is often intimately
+bound to details of the computer architecture, run-time environment,
+language, and programming model.  For example, optimal array layout
+may differ based on the architecture, with a large integer factor
+penalty if wrong.  Low-level issues like pointer alignment, array
+layout, indexing overhead, and initialization all affect performance.
+This is true even with sequential codes.  Thread parallelism adds even
+more pitfalls, like first-touch allocation and false sharing.
+
+For best performance, coders need to tie details of how they manage
+arrays, to details of how parallel code accesses and manages those
+arrays.  Programmers who write architecture-specific code then need to
+mix low-level features of the architecture and programming model into
+high-level algorithms.  This makes it hard to port codes between
+architectures, or to write a code that still performs well as
+architectures evolve.
+
+Kokkos aims to relieve some of this burden, by optimizing array
+management and access for the specific architecture.  Tying arrays to
+shared-memory parallelism lets Kokkos optimize the former to the
+latter.  For example, Kokkos can easily do first-touch allocation,
+because it controls threads that it can use to initialize arrays.
+Kokkos' architecture awareness lets it pick optimal layout and pad
+allocations for good alignment.  Expert coders can also use Kokkos to
+access low-level or more architecture-specific optimizations in a more
+user-friendly way.  For instance, Kokkos makes it easy to experiment
+with different array layouts.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Creating and using a View}\label{S:Views:CreateUse}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Constructing a View}
+
+A View is an array of zero or more dimensions.  Programmers set both
+the type of entries, and the number of dimensions, at compile time, as
+part of the type of the View.  For example, the following specifies
+and allocates a View with four dimensions, whose entries have type
+\texttt{int}:
+
+\begin{lstlisting}
+const size_t N0 = ...;
+const size_t N1 = ...;
+const size_t N2 = ...;
+const size_t N3 = ...;
+View<int****> a ("some label", N0, N1, N2, N3);
+\end{lstlisting}
+
+The string argument is a label, which Kokkos uses for debugging.
+Different Views may have the same label.  The ellipses indicate some
+integer dimensions specified at run time.  Users may also set some
+dimensions at compile time.  For example, the following View has two
+dimensions.  The first one (represented by the asterisk) is a run-time
+dimension, and the second (represented by [3]) is a compile-time
+dimension.  Thus, the View is an N by 3 array of type double, where N
+is specified at run time in the View's constructor.
+
+\begin{lstlisting}
+const size_t N = ...;
+View<double*[3]> b ("another label", N);
+\end{lstlisting}
+
+Views may have up to (at least) 8 dimensions, and any number of these
+may be run-time or compile-time.  The only limitation is that the
+run-time dimensions (if any) must appear first, followed by all the
+compile-time dimensions (if any).  For example, the following are
+valid three-dimensional View types:
+\begin{itemize}
+\item \lstinline!View<int***>!  (3 run-time dimensions)
+\item \lstinline!View<int**[8]>!  (2 run-time, 1 compile-time)
+\item \lstinline!View<int*[3][8]>!  (1 run-time, 2 compile-time)
+\item \lstinline!View<int[4][3][8]>!  (3 compile-time)
+\end{itemize}
+and the following are \emph{not} valid three-dimensional View types:
+\begin{itemize}
+\item \lstinline!View<int[4]**>!
+\item \lstinline!View<int[4][3]*>!
+\item \lstinline!View<int[4]*[8]>!
+\item \lstinline!View<int*[3]*>!
+\item \lstinline!View<int*[3][8]>!
+\end{itemize}
+This limitation comes from the implementation of View using C++
+templates.  View's first template parameter must be a valid C++ type.
+
+\subsection{What types of data may a View contain?}
+
+C++ lets users construct data types that may ``look like'' numbers in
+terms of syntax, but do arbitrarily complicated things inside.  Some
+of those things may not be thread safe, like unprotected updates to
+global state.  Others may perform badly in parallel, like fine-grained
+dynamic memory allocation.  As a result, Kokkos restricts the set of
+data types \texttt{T} which may be the entries of a View.
+
+Users may always construct a View whose entries are 
+\begin{itemize}
+\item built-in data types (``plain old data''), like \texttt{int} or
+  \texttt{double}, or
+\item structs of built-in data types.
+\end{itemize}
+The latter specifically forbids nontrivial destructors, constructors
+with dynamic memory allocation, or virtual methods of any kind.  In
+particular, entries must have size determined at compile time by the
+\texttt{sizeof} operator.\footnote{Kokkos has a customization facility
+  for users to add support for types with size determined at run time,
+  but this is for expert users only.  For examples, see the Stokhos
+  software package in the Trilinos project.}
+
+\subsection{Accessing entries (indexing)}
+
+You may access an entry of a View using parentheses enclosing a
+comma-delimited list of integer indices.  This looks just like a
+Fortran multidimensional array access.  For example:
+\begin{lstlisting}
+const size_t N = ...;
+View<double*[3][4]> a ("some label", N);
+parallel_for (N, [=] (const ptrdiff_t i) {
+    const size_t j = ...;
+    const size_t k = ...;
+    const double a_ijk = a(i,j,k);
+    /* rest of the loop body */
+  });
+\end{lstlisting}
+Note how in the above example, we only access the View's entries in a
+parallel loop body.  In general, you may only access a View's entries
+in an execution space which is allowed to access that View's memory
+space.  For example, if the default memory space is \lstinline!Cuda!
+(CUDA device memory), you may not access it in host code, unless CUDA
+UVM is enabled.  Furthermore, access costs (e.g., latency and
+bandwidth) may vary, depending on the View's ``native'' memory and
+execution spaces, and the execution space from which you access it.
+CUDA UVM may work, but it may also be slow, depending on your access
+pattern and performance requirements.  Thus, best practice is to
+access the View only in a Kokkos parallel for, reduce, or scan, using
+the same execution space as the View.  This also ensures that access
+to the View's entries respect first-touch allocation.  The first
+(leftmost) dimension of the View is the \emph{parallel dimension},
+over which it is most efficient to do parallel array access.
+
+\subsection{Memory management and copying}
+
+\subsubsection{Reference counting}
+
+Kokkos automatically manages deallocation of Views, through a
+reference-counting mechanism.  Otherwise, Views behave like raw
+pointers.  Copying or assigning a View does a shallow copy, and
+changes the reference count.  (The View copied has its reference count
+incremented, and the assigned-to View has its reference count
+decremented.)  A View's destructor (called when the View falls out of
+scope or during a stack unwind due to an exception) decrements the
+reference count.  Once the reference count reaches zero, Kokkos may
+deallocate the View.
+
+For example, the following code allocates two Views, then assigns one
+to the other.  That assignment may deallocate the first View, since it
+reduces its reference count to zero.  It then increases the reference
+count of the second View, since now both Views point to it.
+\begin{lstlisting}
+View<int*> a ("a", 10);
+View<int*> b ("b", 10);
+a = b; // assignment does shallow copy
+\end{lstlisting}
+
+For efficiency, View allocation and reference counting turn off inside
+of Kokkos' parallel for, reduce, and scan operations.  This affects
+what you can do with Views inside of Kokkos' parallel operations.
+
+\subsubsection{Deep copy}
+
+If you want to make a deep copy of a View's contents, you must do so
+explicitly, using the \lstinline!deep_copy! function.  For example:
+\begin{lstlisting}
+View<int*> a ("a", 10);
+View<int*> b ("b", 10);
+deep_copy (a, b); // copy contents of b into a
+\end{lstlisting}
+
+\subsection{Where and how is the View allocated?}
+
+\subsubsection{Execution and memory spaces}
+
+Views are allocated by default, in the default execution space's
+default memory space.  You may access the View's execution space via
+its \lstinline!execution_space! typedef, and its memory space via its
+\lstinline!memory_space! typedef.  You may also specify the execution space
+explicitly as a template parameter.  For example, the following
+allocates a View in CUDA device memory:
+\begin{lstlisting}
+View<int*, Cuda> a ("a", 100000);
+\end{lstlisting}
+and the following allocates a View in ``host'' memory, using OpenMP
+for first-touch allocation:
+\begin{lstlisting}
+View<int*, OpenMP> a ("a", 100000);
+\end{lstlisting}
+
+\subsubsection{Initialization}
+
+A View's entries are initialized to zero by default.  Initialization
+happens in parallel, for first-touch allocation over the first
+(leftmost) dimension of the View.
+
+You may allocate a View without initializing.  For example:
+\begin{lstlisting}
+View<int*> x (ViewAllocateWithoutInitializing (label), 100000);
+\end{lstlisting}
+
+\subsection{How do I get the raw pointer?}
+
+We discourage access to a View's ``raw'' pointer.  This circumvents
+reference counting.  That is, the memory may be deallocated once the
+View's reference count goes to zero, so holding on to a raw pointer
+may result in invalid memory access.  Furthermore, it may not even be
+possible to access the View's memory from a given execution space.
+For example, a View in the \lstinline!Cuda! space points to CUDA device
+memory.  Nevertheless, sometimes you really need access to the
+pointer.  For such cases, we provide the \lstinline!ptr_on_device()!
+method.  For example:
+\begin{lstlisting}
+// Legacy function that takes a raw pointer.
+extern void legacyFunction (double* x_raw, const size_t len);
+
+// Your function that takes a View.
+void myFunction (const View<double*>& x) {
+  // DON'T DO THIS UNLESS YOU MUST
+  double* a_raw = a.ptr_on_device ();
+  const size_t N = x.dimension_0 ();
+  legacyFunction (a_raw, N);
+}
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Layout}\label{S:Views:Layout}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Strides and dimensions}\label{SS:Views:Layout:Strides}
+
+\emph{Layout} refers to the mapping from a logical multidimensional
+index $(i, j, k, \dots)$ to a physical memory offset.  Different
+programming languages may have different layout conventions.  For
+example, Fortran uses \emph{column-major} or ``left'' layout, where
+consecutive entries in the same column of a 2-D array are contiguous
+in memory.  Kokkos calls this \lstinline!LayoutLeft!.  C, C++, and Java use
+\emph{row-major} or ``right'' layout, where consecutive entries in the
+same row of a 2-D array are contiguous in memory.  Kokkos calls this
+\lstinline!LayoutRight!.
+
+The generalization of both left and right layouts is ``strided.''  For
+a strided layout, each dimension has a \emph{stride}.  The stride for
+that dimension determines how far apart in memory two array entries
+are, whose indices in that dimension differ only by one, and whose
+other indices are all the same.  For example, with a 3-D strided view
+with strides $(s_1, s_2, s_3)$, entries $(i, j, k)$ and $(i, j+1, k)$
+are $s_2$ entries (not bytes) apart in memory.  Kokkos calls this
+\lstinline!LayoutStride!.
+
+Strides may differ from dimensions.  For example, Kokkos reserves the
+right to pad each dimension for cache or vector alignment.  You may
+access all the dimensions of a View using the \lstinline!dimension! method,
+and all the strides using the \lstinline!stride! method.  Both take a raw
+integer array, and only fill in as many entries as the number of
+dimensions.  For example:
+\begin{lstlisting}
+const size_t N0 = ...;
+const size_t N1 = ...;
+const size_t N2 = ...;
+View<int***> a ("a", N0, N1, N2);
+size_t dims[3]
+a.dimension (dims); // fill 'dims' with dimensions
+size_t strides[3]
+a.strides (dims); // fill 'strides' with strides
+\end{lstlisting}
+You may also refer to specific dimensions:
+\begin{lstlisting}
+const size_t n0 = a.dimension_0 ();
+const size_t n2 = a.dimension_2 ();
+\end{lstlisting}
+
+Users of the BLAS and LAPACK libraries may be familiar with the ideas
+of layout and stride.  These libraries only accept matrices in
+column-major format.  The stride between consecutive entries in the
+same column is 1, and the stride between consecutive entries in the
+same row is \lstinline!LDA! (``leading dimension of the matrix A'').  The
+number of rows may be less than \lstinline!LDA!, but may not be greater.
+
+\subsection{Other layouts}\label{SS:Views::Layout::Other}
+
+Other layouts are possible.  For example, Kokkos has a ``tiled''
+layout, where a tile's entries are stored contiguously (in either row-
+or column-major order) and tiles have compile-time dimensions.  One
+may also use Kokkos to implement Morton ordering or variants thereof.
+
+\subsection{Default layout depends on execution space}\label{SS:Views:Layout:Default}
+
+Kokkos selects a View's default layout for optimal parallel access
+over the leftmost dimension, based on its execution space.  For
+example, \lstinline!View<int**, Cuda>! has \lstinline!LayoutLeft!, so that
+consecutive threads in the same warp access consecutive entries in
+memory.  This \emph{coalesced access} gives the code better memory
+bandwidth.  In contrast, \lstinline!View<int**, OpenMP>! has
+\lstinline!LayoutRight!, so that a single thread accesses contiguous
+entries of the array.  This avoids wasting cache lines and helps
+prevent false sharing of a cache line between threads.
+
+\subsection{Explicitly specifying layout}\label{SS:Views:Layout:Explicit}
+
+We prefer that users let Kokkos determine a View's layout, based on
+its execution space.  However, sometimes you really need to specify
+the layout.  For example, the BLAS and LAPACK libraries only accept
+column-major arrays.  If you want to give a View to the BLAS or
+LAPACK, that View must be \lstinline!LayoutLeft!.  You may specify the
+layout as a template parameter of View.  For example:
+\begin{lstlisting}
+const size_t N0 = ...;
+const size_t N1 = ...;
+View<double**, LayoutLeft> A ("A", N0, N1);
+
+// Get 'LDA' for BLAS / LAPACK
+int strides[2]; // any integer type works in stride()
+A.stride (strides);
+const int LDA = strides[1];
+\end{lstlisting}
+You may ask a View for its layout via its \lstinline!array_layout! typedef.
+This can be helpful for C++ template metaprogramming.  For example
+(C++11 only):
+\begin{lstlisting}
+template<class ViewType>
+void callBlas (const ViewType& A) {
+  typedef typename ViewType::array_layout array_layout;
+  if (std::is_same<array_layout, LayoutLeft>::value) {
+    callSomeBlasFunction (A.ptr_on_device (), ...);
+  } else {
+    throw std::invalid_argument ("A is not LayoutLeft");
+  }
+}
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Managing Data Placement}\label{S:Views:Placement}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+TODO: Hey Christian, what did you mean by this?
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Access traits}\label{S:Views:AccessTraits}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Const Views}
+
+Different optional template parameters of View let you control how
+Kokkos accesses entries of the array.  The simplest example involves
+making a View \lstinline!const!, that is, making its entries read-only.  It
+is a compile-time error to assign to an entry of a const View.  It
+does not make sense to allocate a const View, but it does make sense
+to assign a non-const View to a const View.  Here is an example:
+\begin{lstlisting}
+const size_t N0 = ...;
+View<double*> a_nonconst ("a_nonconst", N0);
+
+// Assign a nonconst View to a const View
+View<const double*> a_const = a_nonconst;
+// Pass the const View to some read-only function.
+const double result = readOnlyFunction (a_const);
+\end{lstlisting}
+Note that a ``const View'' means the \emph{entries} are const.  You
+may still assign to a const View.  \lstinline!View<const double*>!
+corresponds exactly to \lstinline!const double*!, and
+\lstinline!const View<double*>! to \lstinline!double* const!.
+
+\subsection{Random read Views}
+
+Const Views are useful for declaring intent and helping you debug at
+compile time.  They also open the door to other, optional
+optimizations.  In particular, Kokkos lets you declare that you plan
+to access a read-only array irregularly (less spatial locality), using
+the optional \lstinline!RandomAccess! template parameter.  You may only use
+this with a const View.  For example:
+\begin{lstlisting}
+const size_t N0 = ...;
+View<int*> a_nonconst ("a", N0); // allocate nonconst View
+// Assign to const, RandomAccess View
+View<const int*, RandomAccess> a_ra = a_nonconst;
+\end{lstlisting}
+For a View whose execution space is \lstinline!Cuda!, access to a
+\lstinline!RandomAccess! View may use CUDA texture fetches.  Texture
+fetches are not cache coherent with respect to writes, which is why
+you must use read-only access.  The texture cache is optimized for
+noncontiguous access, since it has a shorter cache line than the
+regular cache.
+
+\lstinline!RandomAccess! is valid for other execution spaces, and Kokkos
+also requires a const View for those execution spaces.  Kokkos
+reserves the right to perform analogous optimizations on other
+execution spaces.
+
+\subsection{Standard idiom for specifying access traits}
+
+The standard idiom for View is to pass it around using as few template
+parameters as possible.  Then, assign to a View with the desired
+access traits only at the ``last moment,'' when those access traits
+are needed just before entering a computational kernel.  This lets you
+template C++ classes and functions on the View type, without
+proliferating instantiations.  Here is an example:
+
+\begin{lstlisting}
+// Compute a sparse matrix-vector product, for a sparse
+// matrix stored in compressed sparse row (CSR) format.
+void
+spmatvec (const View<double*>& y, 
+  const View<const size_t*>& ptr,
+  const View<const int*>& ind,
+  const View<const double*>& val,
+  const View<const double*>& x)
+{
+  // Access to x has less locality than access to y.
+  View<const double*, RandomAccess> x_ra;
+  typedef View<const size_t*>::size_type size_type;
+
+  parallel_for (y.dimension_0 (), [=] (const size_type i) {
+      double y_i = y(i);
+      for (size_t k = ptr(i); k < ptr(i+1); ++k) {
+        y_i += val(k) * x_ra(ind(k));
+      }
+      y(i) = y_i;
+    });
+}
+\end{lstlisting}
+
+\subsection{Unmanaged Views}
+
+It's always better to let Kokkos control memory allocation, but
+sometimes you don't have a choice.  You might have to work with an
+application or an interface that returns a raw pointer, for example.
+Kokkos lets you wrap raw pointers in an \emph{unmanaged View}.
+``Unmanaged'' means that Kokkos does \emph{not} do reference counting
+or automatic deallocation for those Views.  The following example
+shows how to create an unmanaged View of host memory.  You may do this
+for CUDA device memory too, or indeed for memory allocated in any
+memory space, by specifying the View's execution or memory space
+accordingly.
+\begin{lstlisting}
+// Sometimes other code gives you a raw pointer, ...
+const size_t N0 = ...;
+double* x_raw = malloc (N0 * sizeof (double));
+{
+  // ... but you want to access it with Kokkos.
+  //
+  // malloc() returns host memory, so we use the 
+  // host memory space HostSpace.  Unmanaged
+  // Views have no label, because labels work with
+  // the reference counting system.
+  View<double*, HostSpace, Unmanaged> x_view (x_raw, N0);
+
+  functionThatTakesKokkosView (x_view);
+
+  // It's safest for unmanaged Views to fall out of
+  // scope, before freeing their memory.
+}
+free (x_raw);
+\end{lstlisting}
+
+\subsection{Atomic access}
+
+The \lstinline!Atomic! access trait lets you create a View, such that every
+read or write to any entry uses an atomic update.  This only works for
+certain data types, for which the hardware and programming model
+support atomic updates.  Currently, Kokkos limits atomic updates to
+32-bit or 64-bit built-in types.

@@ -1,0 +1,300 @@
+
+\chapter{Hierarchical Parallelism}\label{C:Hierarchical}
+Node architectures on modern high-performance computers are characterized by ever more \emph{hierarchical parallelism}. 
+A level in the hierachy is determined by the hardware resources which are shared between compute units at that level. 
+Higher levels in the hierarchy also have access to all resources in its branch at lower levels of the hierarchy.
+This concept is orthogonal to the concept of heterogeneity. 
+For example, a node in a typical CPU-based cluster consists of a number of multicore CPUs.  Each core supports one or more hyperthreads, and each hyperthread can execute vector instructions.
+This means there are 4 levels in the hierarchy of parallelism: 
+\begin{enumerate}
+\item CPU sockets share access to the same memory and network resources,
+\item cores within a socket typically have a shared last level cache (LLC), 
+\item hyperthreads on the same core have access to a shared L1 (and L2) cache and they submit instructions to the same execution units, and
+\item vector units execute a shared instruction on multiple data items.
+\end{enumerate}
+GPU-based systems also have a hierarchy of 4 levels:
+\begin{enumerate}
+\item Multiple GPUs in the same node share access to the same host memory and network resources, 
+\item core clusters (e.g. the SMs on an NVIDIA GPU) have a shared cache and access to the same high bandwidth memory on a single GPU, 
+\item threads running on the same core cluster have access to the same L1 cache and scratch memory and they are 
+\item grouped in so called Warps or Wave Fronts within which threads are always synchronous and can collaborate more closely for example via direct register swapping. 
+\end{enumerate}
+Kokkos provides a number of abstract levels of parallelism which at compile time or run time are mapped to the appropriate hardware features. 
+This mapping is not necessarily static or predefined; it may differ for each kernel.
+Furthermore, some mapping decisions happen at run time. 
+This enables adaptive kernels which map work to different hardware resources depending on the work set size.
+While Kokkos provides defaults and suggestions, the optimal mapping can be algorithm dependent. 
+Hierarchical parallelism is accessible through execution policies.
+
+\section{Thread Teams Basics}
+
+Kokkos' most basic hierarchical parallelism concept is a thread team.
+A \emph{thread team} is a collection of threads which can synchronize,
+and which share a ``scratch pad'' memory
+(see Section\ref {S:Hierarchical:Scratch}).
+
+Instead of mapping a 1-D range of indices to hardware resources,
+Kokkos' thread teams map a 2-D index range.
+The first index is the \emph{league}, the index of the team.
+The second index is the thread index within a team.
+In CUDA this is equivalent to launching a 1-D grid of 1-D blocks.
+The league size is arbitrary -- that is, it is only limited by the integer size type -- while the team size must fit in the hardware constraints.
+As in CUDA, only a limited number of teams are actually active at the same time,
+and they must run to completion before new ones are executed. 
+Consequently it is not valid to use inter thread-team synchronization mechanisms
+such as waits for events initiated by other thread teams. 
+
+\subsection{Creating a Policy Instance}
+
+Kokkos exposes use of thread teams with the \lstinline!Kokkos::TeamPolicy! execution policy.
+To use thread teams you need to create a \lstinline|Kokkos::TeamPolicy| instance.
+It can be created inline for the parallel dispatch call.
+The constructors requires two arguments: a league size and a team size. 
+As with the  \lstinline|Kokkos::RangePolicy| a specific execution tag and a specific execution space can be given as optional template arguments.
+\begin{lstlisting}
+// Using default execution space and launching 
+// a league with league_size teams with team_size threads each
+Kokkos::TeamPolicy<> 
+        policy( league_size, team_size ); 
+
+// Using  a specific execution space to 
+// run a n_worksets x team_size parallelism
+Kokkos::TeamPolicy<ExecutionSpace> 
+        policy( league_size, team_size );
+
+// Using a specific execution space and an execution tag 
+Kokkos::TeamPolicy<SomeTag, ExecutionSpace> 
+        policy( league_size, team_size ); 
+\end{lstlisting}
+ 
+\subsection{Basic Kernels}
+Within the kernel the team policy member type provides the necessary functionality to use teams. 
+It allows access to thread identifiers such as league rank and size and team rank and size, as well as team synchronous actions such as team barriers, reductions and scans.
+\begin{lstlisting}
+using Kokkos::TeamPolicy;
+using Kokkos::parallel_for;
+
+typedef TeamPolicy<ExecutionSpace>::member_type member_type;
+// Create an instance of the policy
+TeamPolicy<ExecutionSpace> policy (league_size, team_size);
+// Launch a kernel
+parallel_for (policy, KOKKOS_LAMBDA (member_type team_member) {
+    // Calculate a global thread id
+    int k = team_member.league_rank () * team_member.team_size () +
+            team_member.team_rank ();
+    // Calculate the sum of the global thread ids of this team
+    int team_sum = team_member.reduce (k);
+    // Atomicly add the value to a global value
+    a() += team_sum;
+  });
+\end{lstlisting}
+
+This approach of writing hierarchical parallelism algorithms makes it very explicit that a kernel using a \lstinline!TeamPolicy! constitutes a parallel region with respect to the team.
+
+\section{Team Scratch Pads}\label{S:Hierarchical:Scratch}
+
+Each Kokkos team has a ``scratch pad.''
+This is an instance of a memory space accessible only by threads in that team.
+Scratch pads let an algorithm load a workset into a shared space
+and then collaboratively work on it with all members of a team.
+The lifetime of data in a scratch pad is the lifetime of the team.
+In particular, scratch pads are recycled by all logical teams running on the same physical set of cores.
+During the lifetime of the team all operations allowed on global memory are allowed on the scratch memory.
+This includes taking addresses and performing atomic operations on elements located in scratch space. 
+Team-level scratch pads correspond to the per-block shared memory in Cuda,
+or to the ``local store'' memory on the Cell processor.
+
+Kokkos exposes scratch pads through a special memory space associated with the execution space:
+\lstinline|execution_space::scratch_memory_space|.
+You may allocate a chunk of scratch memory through the \lstinline|TeamPolicy| member type.
+You may request multiple allocations from scratch, up to a user-provided maximum. 
+The maximum is provided either through a function in the functor which returns a potentially team-size dependent value, 
+or it can be specified as an argument to the constructor of the TeamPolicy. 
+It is not valid to provide both values at the same time. 
+The argument to the TeamPolicy can be used to set the shared memory size when using functors. 
+One restriction on shared memory allocations is that they can not be freed during the lifetime of the team. 
+This avoids the complexity of a memory pool,
+and reduces the time it takes to obtain an allocation
+(which currently is a few operations to calculate the offset). 
+
+\begin{lstlisting}
+template<class ExecutionSpace>
+struct functor {
+  typedef ExecutionSpace execution_space;
+  typedef execution_space::member_type member_type; 
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (member_type team_member) const {
+    size_t double_size = 5*team_member.team_size()*sizeof(double);
+
+    // Get a shared team allocation on the scratch pad
+    double* team_shared_a = (double*)
+      team_member.team_shmem().get_shmem(double_size);
+
+    // Get another allocation on the scratch pad
+    int* team_shared_b = (int*)
+      team_member.team_shmem().get_shmem(160*sizeof(int));
+
+    // ... use the scratch allocations ...
+  }
+
+  // Provide the shared memory capacity.
+  // This function takes the team_size as an argument,
+  // which allows team_size dependent allocations.
+  size_t team_shmem_size (int team_size) const {
+    return sizeof(double)*5*team_size +
+           sizeof(int)*160;
+  }
+};
+\end{lstlisting}
+
+Instead of simply getting raw allocations in memory, users can also allocate Views directly in scratch memory. 
+This is achieved by providing the shared memory handle as the first argument of the View constructor.
+Views also have a static member function which return their shared memory size requirements. 
+The function expects the run-time dimensions as arguments, corresponding to View's constructor. 
+
+\begin{lstlisting}
+tyepdef Kokkos::DefaultExecutionSpace::scratch_memory_space
+  ScratchSpace;
+// Define a view type in ScratchSpace
+typedef Kokkos::View<int*[4],ScratchSpace> shared_int_2d;
+
+// Get the size of the shared memory allocation
+size_t shared_size = shared_int_2d::shmem_size(team_size);
+Kokkos::parallel_for(Kokkos::TeamPolicy<>(league_size,team_size),
+                     KOKKOS_LAMBDA ( member_type team_member) {
+  // Get a view allocated in team shared memory.
+  // The constructor takes the shared memory handle and the 
+  // runtime dimensions
+  shared_int_2d A(team_member.team_shmem(), team_member.team_size());
+  ...
+      
+});
+\end{lstlisting}
+
+
+\section{Nested Parallelism}
+
+Instead of writing code which explicitly uses league and team rank indices, one can use nested parallelism to implement hierarchical algorithms.
+Kokkos lets the user have up to three nested layers of parallelism.
+The team and thread levels are the first two levels.
+The third level is \emph{vector} parallelism.
+
+You may use any of the three parallel patterns -- for, reduce, or scan -- at each level.
+You may nest them and use them in conjunction with code that is aware of the league and team rank.
+The different layers are accessible via special execution policies:
+\lstinline|TeamThreadLoop| and \lstinline|ThreadVectorLoop|. 
+
+\subsection{Team and Vector Loops}
+
+The first nested level of parallel loops splits an index range over the threads of a team. 
+This motivates the policy name \lstinline|TeamThreadRange|, 
+which indicates that the loop is executed once by the team with the index range split over threads.
+The loop count is not limited to the number of threads in a team, and how the index range is mapped to threads is architecture dependent.
+It is not legal to nest multiple parallel loops using the \lstinline!TeamThreadRange! policy.
+However, it is valid to have multiple parallel loops using the \lstinline!TeamThreadRange! policy follow each other in sequence, in the same kernel.  
+Note that it is not legal to make a write access to POD data outside of the closure of a nested parallel layer. 
+This is a conscious choice to prevent difficult to debug issues related to thread private, team shared and globally shared variables. 
+A simple way to enforce this is by using the ``capture by value'' clause with lambdas. 
+With the lambda being considered as \lstinline|const| inside the \lstinline!TeamThreadRange! loop,
+the compiler will catch illegal accesses at compile time as a \lstinline|const| violation.  
+
+The most simple use case is to have another \lstinline|parallel_for| nested inside a kernel. 
+\begin{lstlisting}
+Kokkos::parallel_for(Kokkos::TeamPolicy<>(league_size,team_size), 
+                     KOKKOS_LAMBDA ( member_type team_member) {
+  Scalar tmp;
+  Kokkos::parallel_for(
+    Kokkos::TeamThreadRange(team_member,loop_count), 
+    [=] (int& i) {
+    ....
+    // tmp += i; // This would be an illegal access
+  });
+});
+\end{lstlisting}
+
+The \lstinline|parallel_reduce| construct can be used to perform optimized team-level reductions:
+
+\begin{lstlisting}
+using Kokkos::parallel_reduce;
+using Kokkos::TeamPolicy;
+using Kokkos::TeamThreadRange;
+parallel_for (TeamPolicy<> (league_size, team_size),
+                 KOKKOS_LAMBDA (member_type team_member) {
+    // The default reduction uses Scalar's += operator
+    // to combine thread contributions.
+    Scalar sum;
+    parallel_reduce (TeamThreadRange (team_member, loop_count), 
+      [=] (int& i, Scalar& lsum) {
+        // ... 
+        lsum += ...;
+      }, sum);
+
+    // You may provide a custom reduction as another
+    // lambda together with an initialization value.
+    Scalar product;
+    Scalar init_value = 1;
+    parallel_reduce (TeamThreadRange (team_member, loop_count), 
+      [=] (int& i, Scalar& lsum) {
+        // ...
+        lsum *= ...;
+      }, product, [=] (Scalar& lsum, Scalar& update) {
+        lsum *= update; 
+      }, init_value);
+  });
+\end{lstlisting}
+
+The third pattern is \lstinline|parallel_scan| which can be used to perform prefix scans.
+
+
+
+\subsection{Execution Restriction with \lstinline|single|}
+
+As stated in the earlier subsections, a kernel has to be treated as a parallel region with respect to threads (and vector lanes) within a team.
+This means that global memory accesses outside of the respective nested levels potentially have to be protected against repetitive execution. 
+A common example is the case where a team performs some calculation but only one result per team has to be written back to global memory. 
+Kokkos provides the \lstinline|Kokkkos::single(Policy,Lambda)| function for this case.
+The two policies \lstinline|Kokkos::PerTeam| and \lstinline|Kokkos::PerThread| restrict execution to once per thread or once per team. 
+
+\begin{lstlisting}
+using Kokkos::parallel_for;
+using Kokkos::parallel_reduce;
+using Kokkos::TeamThreadRange;
+using Kokkos::ThreadVectorRange;
+using Kokkos::PerThread;
+// ...
+parallel_for (TeamThreadRange (thread, 100), [=] (int i) {
+    double sum = 0;
+    // Perform a vector reduction with a thread
+    parallel_reduce (ThreadVectorRange (thread, 100), 
+      [=] (int i, double& lsum) {
+        // ...
+        lsum += ...;
+      }, sum);
+    // Add the result value into a team shared array.
+    // Make sure it is only added once per thread.
+    Kokkos::single (PerThread (), [=] () {
+        shared_array(i) += sum;
+      });
+  });
+  
+double sum;
+parallel_reduce (TeamThreadRange (thread, 99), 
+  [=] (int i, double& lsum) {
+    // Add the result value into a team shared array
+    // Make sure its only added once per thread
+    Kokkos::single (PerThread (thread), [=] () {
+        lsum += someFunction (shared_array(i), 
+                              shared_array(i+1));
+      });
+  }, sum);
+  
+// Add the per team contribution to global memory
+Kokkos::single (PerTeam (thread), [=] () {
+    global_array(thread.league_rank()) = sum;
+  });
+
+// ...
+\end{lstlisting}
+ 
+
