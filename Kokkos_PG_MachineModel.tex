@@ -1,5 +1,154 @@
+\chapter{Machine model}\label{C:Model}
 
-\chapter{Machine Model}
+After reading this chapter, you will understand the abstract model of
+a shared-memory parallel computer which underlies Kokkos.  
+Respecting the abstract machine model ensures performance portability.
+The model has two components:
+\begin{itemize}
+\item \emph{Memory spaces}, in which data live
+\item \emph{Execution spaces}, which execute parallel operations using
+  data in one or more memory spaces
+\end{itemize}
+All code that uses Kokkos involves relations between memory and execution spaces.
+% A given execution space may or may not be able to access data in a
+% given memory space.  Users can ask Kokkos if it can.  Users may also
+% copy data between any two different memory spaces by using
+% \lstinline!deep_copy!.
 
-The abstract machine model of Kokkos allows for very complex heterogenous node architectures containing N execution spaces and M memory spaces.
+\section{Motivation}\label{S:Model:Motivation}
+
+Kokkos is a programming model which happens to have a C++ implementation.
+As you are first learning Kokkos,
+you may find yourself focusing on details of the implementation,
+especially if you have less experience with C++ syntax.
+However, as the syntax becomes more familiar to you,
+you will find it more and more helpful to understand the underlying abstractions.
+
+Kokkos assumes an \emph{abstract machine model},
+which represents a shared-memory parallel computer architecture.
+The model may represent either a stand-alone computer,
+like a laptop or workstation,
+or a single ``parallel process'' in a distributed-memory parallel programming model such as MPI (the Message-Passing Interface).
+In general, we write \emph{node} to describe the hardware that Kokkos governs.
+Kokkos' machine model lets programmers reason about very complicated heterogenous node architectures.
+It also lets them start with simple, even sequential architectures,
+and gradually port code from there to perform well on more complicated computer architectures.
+The abstract machine model might look complicated,
+but it reflects computers that companies are actually designing and building.
+Many chapters in this Guide show how to use the more complex aspects of the model.
+For example, see Chapter \ref {C:Hierarchical},
+which shows how to use Kokkos to expose multiple levels of parallelism.
+
+The point of this chapter is that \emph{respecting the abstract machine model ensures performance portability}.
+The phrase \emph{performance portability} means that the same code performs reasonably well on many different computer architectures,
+with no or minimal\footnote{For example, users might change a single C++ typedef or a single configure-time option.} changes to code.
+Kokkos depends on this abstract machine model for performance portability.
+\emph{Implementations} of Kokkos may depend on other things for performance portability.
+For example, efficiency of \lstinline!parallel_for! in the C++ implementation relies in part on compilers' ability to inline code.
+One could imagine a different Kokkos implementation based on source-to-source translation,
+that inlines parallel loop bodies into \lstinline!parallel_for! before they reach the compiler.
+Kokkos' OpenMP and Pthreads back-ends may rely on the Portable Hardware Locality (hwloc) library
+to control assignment of software threads to hardware cores or hyperthreads.
+However, Kokkos as an abstract programming model does not depend on these things.
+
+\section{Memory spaces and execution spaces}\label{S:Model:Spaces}
+
+A \emph{memory space} contains data.
+Users access those data as k-dimensional typed arrays, where k may be any nonnegative integer.
+(Zero-dimensional arrays are single values.  See Chapter \ref{C:View} for details.)
+% In the C++ implementation of the Kokkos programming model,
+% these memory addresses are pointers,
+% which point to contiguous address ranges,
+% each of which represents an allocation of data.
+The memory space controls dynamic allocation and deallocation of those arrays,
+if it allows them at all.
+
+An \emph{execution space} runs Kokkos' parallel operations,
+like parallel for, reduce, and scan.  (See Chapter \ref{C:Dispatch}.)
+It may access data in some available memory spaces.
+Whether an execution space may access data in a memory space
+depends on \emph{both} the execution space and the memory space.
+
+Here is an analogy: Many operating systems have ``processes.''
+A process is like an execution space, in that code may execute in one or more concurrent threads.
+Those threads share access to a common stack and heap, which comprise the process' ``memory space.''
+Two different processes may not access each other's memory spaces by default.
+However, some operating systems have a ``shared memory'' mechanism.\footnote{See e.g., the POSIX \lstinline!shm_open! and related functions.}
+This lets different processes share access to a specific region of memory,
+which in Kokkos terms is like a ``memory space,'' separate from each process' normal memory space.
+Some operating systems also let you open a file,
+and then ``memory map'' that file into a contiguous memory address range.\footnote{See e.g., the POSIX \lstinline!mmap! function.}
+This makes the file behave like yet another memory space.
+Memory-mapped files may have very different performance characteristics than the usual memory,
+even though programmers access both ``memory spaces'' through the same interface.
+Whether or not a process may access a file depends on both the process and the file.
+
+Kokkos distinguishes between \emph{types} of spaces, and \emph{instances} of spaces.
+For example, a node might have multiple NVIDIA GPUs.
+All of these GPUs' memory spaces have the type \lstinline!Kokkos::CudaSpace!,
+but each space is a different instance of \lstinline!Kokkos::CudaSpace!.
+The common case of using Kokkos presumes a single instance of a given execution or memory space.
+In that case, one uses the type of the space as a synonym for the default (single) instance of that space.
+When we speak of a space by its type,
+we mean the default single instance of that space,
+unless we say otherwise.
+
+% Kokkos' abstract machine model may contain $N$ types of execution spaces
+% and $M$ types of memory spaces.
+% It is possible that $N \neq M$.
+
+\section{Memory consistency}\label{S:Model:Consistency}
+
+A \emph{memory consistency model} describes the behavior of a memory space $M$,
+with respect to multiple threads running in an execution space $E$
+that access the same data in $M$ concurrently.
+One may also encounter this idea as the phrase ``cache coherency.''
+We prefer ``memory consistency,'' because Kokkos does not require caches.
+Consistency models are a complicated subject which we cannot cover in sufficient detail here.
+We encourage readers to refer to standard computer hardware textbooks,
+like ``Computer Architecture: A Quantitative Approach'' (Hennessy and Patterson, 2011).
+
+Kokkos imposes a very weak consistency model.
+For example, it does \emph{not} assume sequential consistency.
+Much like MPI 3 one-sided communication
+or other partitioned global address space (PGAS) programming models,
+Kokkos requires an execution space to issue a \emph{memory fence}
+to a given memory space, 
+in order to bring that memory space into a consistent state.
+The fence forces completion of all outstanding memory writes,
+and reorders all loads to occur after all those writes complete.
+
+\section{Asynchronous parallel dispatch}\label{S:Model:Async}
+
+Kokkos lets users tell execution spaces to execute parallel operations.
+These include parallel for, reduce, and scan (see Chapter \ref{C:Dispatch})
+as well as View initialization (see Chapter \ref{C:View}).
+We name the class of all such operations \emph{parallel dispatch}.
+
+In Kokkos, parallel dispatch executes \emph{asynchronously}.  
+This means that they may return ``early,'' before they have actually completed.
+However, despite this asynchrony,
+they execute in sequence with respect to other Kokkos operations.
+This matters for things like timing.
+For example, a \lstinline!parallel_for! may return ``right away,''
+so if you want to measure how long it takes,
+you must first call \lstinline!fence()! on that execution space.
+This forces all functors to complete before \lstinline!fence()! returns.
+
+\section{Atomic updates}\label{S:Model:Atomic}
+
+Some execution spaces may implement \emph{atomic updates} with respect to some memory spaces.
+An atomic update runs on an execution space, and changes a word of data in a memory space.
+The atomic update behaves atomically with respect to other atomic updates happening concurrently by that execution space on that memory space.
+``Behaves atomically'' means that all of the atomic updates will complete,
+and the word of data will be changed in a way that respects some order of those update operations.
+Kokkos does not promise any particular order.
+Furthermore, for a nonatomic memory read or write to ``see'' the results of atomic updates,
+the execution space must first execute a \lstinline!fence()! operation to that memory space.
+
+
+
+
+
+
 
