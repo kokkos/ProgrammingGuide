@@ -1,4 +1,4 @@
-\chapter{View: Multidimensional array}
+\chapter{View: Multidimensional array}\label{C:View}
 
 After reading this chapter, you should understand the following:
 \begin{itemize}
@@ -18,7 +18,7 @@ the \lstinline!Kokkos! namespace have been imported into the working
 namespace.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Why Kokkos needs multidimensional arrays}\label{S:Views:Why}
+\section{Why Kokkos needs multidimensional arrays}\label{S:View:Why}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Many scientific and engineering codes spend a lot of time computing
@@ -52,7 +52,7 @@ user-friendly way.  For instance, Kokkos makes it easy to experiment
 with different array layouts.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Creating and using a View}\label{S:Views:CreateUse}
+\section{Creating and using a View}\label{S:View:CreateUse}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Constructing a View}
@@ -254,10 +254,10 @@ void myFunction (const View<double*>& x) {
 \end{lstlisting}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Layout}\label{S:Views:Layout}
+\section{Layout}\label{S:View:Layout}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Strides and dimensions}\label{SS:Views:Layout:Strides}
+\subsection{Strides and dimensions}\label{SS:View:Layout:Strides}
 
 \emph{Layout} refers to the mapping from a logical multidimensional
 index $(i, j, k, \dots)$ to a physical memory offset.  Different
@@ -307,14 +307,14 @@ same column is 1, and the stride between consecutive entries in the
 same row is \lstinline!LDA! (``leading dimension of the matrix A'').  The
 number of rows may be less than \lstinline!LDA!, but may not be greater.
 
-\subsection{Other layouts}\label{SS:Views::Layout::Other}
+\subsection{Other layouts}\label{SS:View::Layout::Other}
 
 Other layouts are possible.  For example, Kokkos has a ``tiled''
 layout, where a tile's entries are stored contiguously (in either row-
 or column-major order) and tiles have compile-time dimensions.  One
 may also use Kokkos to implement Morton ordering or variants thereof.
 
-\subsection{Default layout depends on execution space}\label{SS:Views:Layout:Default}
+\subsection{Default layout depends on execution space}\label{SS:View:Layout:Default}
 
 Kokkos selects a View's default layout for optimal parallel access
 over the leftmost dimension, based on its execution space.  For
@@ -326,7 +326,7 @@ bandwidth.  In contrast, \lstinline!View<int**, OpenMP>! has
 entries of the array.  This avoids wasting cache lines and helps
 prevent false sharing of a cache line between threads.
 
-\subsection{Explicitly specifying layout}\label{SS:Views:Layout:Explicit}
+\subsection{Explicitly specifying layout}\label{SS:View:Layout:Explicit}
 
 We prefer that users let Kokkos determine a View's layout, based on
 its execution space.  However, sometimes you really need to specify
@@ -360,7 +360,7 @@ void callBlas (const ViewType& A) {
 \end{lstlisting}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Managing Data Placement}\label{S:Views:Placement}
+\section{Managing Data Placement}\label{S:View:Placement}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 TODO: Hey Christian, what did you mean by this?
@@ -370,7 +370,7 @@ Also, please emphasize memory space over execution space, and talk
 about the UVM and pinned variants of \lstinline!CudaSpace!.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Access traits}\label{S:Views:AccessTraits}
+\section{Access traits}\label{S:View:AccessTraits}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Const Views}
