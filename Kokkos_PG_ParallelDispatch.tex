@@ -15,6 +15,17 @@ space.  Kokkos provides three different parallel operations:
 Kokkos gives users two options for defining the body of a parallel
 loop: functors and lambdas.  It also lets users control how the
 parallel operation executes, by specifying an \emph{execution policy}.
+Later chapters will cover more advanced execution policies that allow
+nested parallelism.
+
+Important notes on syntax:
+\begin{itemize}
+\item Use the \lstinline!KOKKOS_INLINE_FUNCTION! macro to mark a
+  functor's methods that Kokkos will call in parallel
+\item Use the \lstinline!KOKKOS_LAMBDA! macro to replace a lambda's
+  capture clause when giving the lambda to Kokkos for parallel
+  execution
+\end{itemize}
 
 \section{Specifying the parallel loop body}
 
@@ -55,6 +66,17 @@ By default, lambdas capture nothing (as the default capture specifier \lstinline
 This is not likely to be useful, since parallel for generally works by its side effects.
 Thus, we recommend using the ``capture by value'' specifier \lstinline![=]! by default.
 You may also explicitly specify variables to capture, but they must be captured by value.
+We prefer that for the outermost level of parallelism (see Chapter \ref{C:Hierarchical}),
+you use the \lstinline!KOKKOS_LAMBDA! macro instead of the capture clause.
+If CUDA is disabled, this just turns into the usual capture-by-value clause \lstinline![=]!.
+That captures variables from the surrounding scope by value.
+Do NOT capture them by reference!
+If CUDA is enabled, this macro may have a special definition 
+that makes the lambda work correctly with CUDA.
+Compare to the \lstinline!KOKKOS_INLINE_FUNCTION! macro,
+which has a special meaning if CUDA is enabled.
+If you do not plan to build with CUDA, you may use \lstinline![=]! explicitly,
+but we find using the macro easier than remembering the capture clause syntax.
 
 \subsection{Should I use a functor or a lambda?}
 
@@ -117,7 +139,8 @@ const size_t N = ...;
 View<double*> x ("x", N);
 // ... fill x with some numbers ... 
 double sum = 0.0;
-parallel_reduce (N, [=] (const int i, double& update) {
+// KOKKOS_LAMBDA macro includes capture-by-value specifier [=].
+parallel_reduce (N, KOKKOS_LAMBDA (const int i, double& update) {
     update += x(i); }, sum);
 \end{lstlisting}
 This version of \verb!parallel_reduce! is easy to use,
@@ -241,7 +264,7 @@ This example has a short enough loop body that it would be better to use a lambd
 \begin{lstlisting}
 // Compute the sum of squares from 0 to N-1.
 int sum = 0;
-parallel_reduce (N, [=] (const int i, int& lsum) { lsum += i*i; });
+parallel_reduce (N, KOKKOS_LAMBDA (const int i, int& lsum) { lsum += i*i; });
 \end{lstlisting}
 
 \subsection{Reductions with an array of results}
@@ -345,7 +368,7 @@ Here is a lambda example where the intermediate results have type \lstinline!flo
 \begin{lstlisting}
 View<float*> x = ...; // assume filled with input values
 const size_t N = x.dimension_0 ();
-parallel_scan (N, [=] (const int i, float& upd, const bool final) {
+parallel_scan (N, KOKKOS_LAMBDA (const int i, float& upd, const bool final) {
     if (final) {
       x(i) = upd; // only update array on final pass
     }

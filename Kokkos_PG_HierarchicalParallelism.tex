@@ -55,7 +55,7 @@ and they must run to completion before new ones are executed.
 Consequently it is not valid to use inter thread-team synchronization mechanisms
 such as waits for events initiated by other thread teams. 
 
-\subsection{Creating a Policy Instance}\label{SS:Hierarchical:Teams:Policy}
+\subsection{Creating a Policy instance}\label{SS:Hierarchical:Teams:Policy}
 
 Kokkos exposes use of thread teams with the \lstinline!Kokkos::TeamPolicy! execution policy.
 To use thread teams you need to create a \lstinline|Kokkos::TeamPolicy| instance.
@@ -78,10 +78,11 @@ Kokkos::TeamPolicy<SomeTag, ExecutionSpace>
         policy( league_size, team_size ); 
 \end{lstlisting}
  
-\subsection{Basic Kernels}\label{SS:Hierarchical:Teams:Kernels}
+\subsection{Basic kernels}\label{SS:Hierarchical:Teams:Kernels}
 
-Within the kernel the team policy member type provides the necessary functionality to use teams. 
-It allows access to thread identifiers such as league rank and size and team rank and size, as well as team synchronous actions such as team barriers, reductions and scans.
+The team policy's \lstinline!member_type! provides the necessary functionality to use teams within a parallel kernel.
+It allows access to thread identifiers such as the league rank and size, and the team rank and size.
+It also provides team-synchronous actions such as team barriers, reductions and scans.
 \begin{lstlisting}
 using Kokkos::TeamPolicy;
 using Kokkos::parallel_for;
@@ -101,7 +102,8 @@ parallel_for (policy, KOKKOS_LAMBDA (member_type team_member) {
   });
 \end{lstlisting}
 
-This approach of writing hierarchical parallelism algorithms makes it very explicit that a kernel using a \lstinline!TeamPolicy! constitutes a parallel region with respect to the team.
+The name ``\lstinline!TeamPolicy!'' makes it explicit that a kernel
+using it constitutes a parallel region with respect to the team.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Team scratch pad memory}\label{S:Hierarchical:Scratch}
@@ -214,17 +216,21 @@ A simple way to enforce this is by using the ``capture by value'' clause with la
 With the lambda being considered as \lstinline|const| inside the \lstinline!TeamThreadRange! loop,
 the compiler will catch illegal accesses at compile time as a \lstinline|const| violation.  
 
-The most simple use case is to have another \lstinline|parallel_for| nested inside a kernel. 
+The simplest use case is to have another \lstinline|parallel_for| nested inside a kernel. 
 \begin{lstlisting}
-Kokkos::parallel_for(Kokkos::TeamPolicy<>(league_size,team_size), 
-                     KOKKOS_LAMBDA ( member_type team_member) {
+using Kokkos::parallel_for;
+using Kokkos::TeamPolicy;
+using Kokkos::TeamThreadRange;
+
+parallel_for (TeamPolicy<> (league_size, team_size), 
+                    KOKKOS_LAMBDA (member_type team_member)
+{
   Scalar tmp;
-  Kokkos::parallel_for(
-    Kokkos::TeamThreadRange(team_member,loop_count), 
+  parallel_for (TeamThreadRange (team_member, loop_count), 
     [=] (int& i) {
-    ....
-    // tmp += i; // This would be an illegal access
-  });
+      // ...
+      // tmp += i; // This would be an illegal access
+    });
 });
 \end{lstlisting}
 
@@ -261,13 +267,28 @@ parallel_for (TeamPolicy<> (league_size, team_size),
 
 The third pattern is \lstinline|parallel_scan| which can be used to perform prefix scans.
 
-\subsection{Execution Restriction with \lstinline|single|}
+\subsection{Restrict execution with \lstinline|single|}
 
-As stated in the earlier subsections, a kernel has to be treated as a parallel region with respect to threads (and vector lanes) within a team.
+As stated above, a kernel is a parallel region with respect to threads (and vector lanes) within a team.
 This means that global memory accesses outside of the respective nested levels potentially have to be protected against repetitive execution. 
 A common example is the case where a team performs some calculation but only one result per team has to be written back to global memory. 
+
 Kokkos provides the \lstinline|Kokkkos::single(Policy,Lambda)| function for this case.
-The two policies \lstinline|Kokkos::PerTeam| and \lstinline|Kokkos::PerThread| restrict execution to once per thread or once per team. 
+It currently accepts two policies:
+\begin{itemize}
+\item \lstinline|Kokkos::PerTeam| restricts execution of the lambda's
+  body to once per team
+\item \lstinline|Kokkos::PerThread| restricts execution of the
+  lambda's body to once per thread (that is, to only one vector lane
+  in a thread)
+\end{itemize}
+The \lstinline!single! function takes a lambda as its second argument.
+That lambda takes zero arguments, 
+so its body must perform side effects in order to have an effect.
+It must always be correct for the lambda to capture variables by value
+(\lstinline![=]!, not \lstinline![&]!).
+Thus, if the lambda captures by reference,
+it must \emph{not} modify variables that it has captured by reference.
 
 \begin{lstlisting}
 using Kokkos::parallel_for;
@@ -275,39 +296,45 @@ using Kokkos::parallel_reduce;
 using Kokkos::TeamThreadRange;
 using Kokkos::ThreadVectorRange;
 using Kokkos::PerThread;
-// ...
-parallel_for (TeamThreadRange (thread, 100), [=] (int i) {
-    double sum = 0;
-    // Perform a vector reduction with a thread
-    parallel_reduce (ThreadVectorRange (thread, 100), 
-      [=] (int i, double& lsum) {
-        // ...
-        lsum += ...;
-      }, sum);
-    // Add the result value into a team shared array.
-    // Make sure it is only added once per thread.
-    Kokkos::single (PerThread (), [=] () {
-        shared_array(i) += sum;
-      });
-  });
-  
-double sum;
-parallel_reduce (TeamThreadRange (thread, 99), 
-  [=] (int i, double& lsum) {
-    // Add the result value into a team shared array
-    // Make sure its only added once per thread
-    Kokkos::single (PerThread (thread), [=] () {
-        lsum += someFunction (shared_array(i), 
-                              shared_array(i+1));
-      });
-  }, sum);
-  
-// Add the per team contribution to global memory
-Kokkos::single (PerTeam (thread), [=] () {
-    global_array(thread.league_rank()) = sum;
-  });
 
-// ...
+TeamPolicy<...> policy (...);
+typedef TeamPolicy<...>::member_type team_member;
+
+parallel_for (policy, KOKKOS_LAMBDA (const team_member& thread) {
+  // ...
+
+  parallel_for (TeamThreadRange (thread, 100), 
+    KOKKOS_LAMBDA (const int& i) {
+      double sum = 0;
+      // Perform a vector reduction with a thread
+      parallel_reduce (ThreadVectorRange (thread, 100), 
+        [=] (int i, double& lsum) {
+          // ...
+          lsum += ...;
+        }, sum);
+      // Add the result value into a team shared array.
+      // Make sure it is only added once per thread.
+      Kokkos::single (PerThread (), [=] () {
+          shared_array(i) += sum;
+        });
+    });
+  
+  double sum;
+  parallel_reduce (TeamThreadRange (thread, 99), 
+    KOKKOS_LAMBDA (int i, double& lsum) {
+      // Add the result value into a team shared array.
+      // Make sure it is only added once per thread.
+      Kokkos::single (PerThread (thread), [=] () {
+          lsum += someFunction (shared_array(i), 
+                                shared_array(i+1));
+        });
+    }, sum);
+  
+  // Add the per team contribution to global memory.
+  Kokkos::single (PerTeam (thread), [=] () {
+      global_array(thread.league_rank()) = sum;
+    });
+  });
 \end{lstlisting}
  
 
