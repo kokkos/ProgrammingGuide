@@ -110,10 +110,9 @@ The \lstinline|num_threads| field corresponds to the \verb!--kokkos-threads! com
 Not all parameters are observed by all execution spaces, and the struct might expand in the future if needed.
 
 If you set \lstinline|num_threads| or \lstinline|num_numa| to zero or less, 
-Kokkos will \emph{not} initialize the default host execution space.
+Kokkos will try to determine default values if possible or otherwise set them to 1.
+In particular Kokkos can use the hwloc library to determine default settings, using the assumption that the process binding mask is unique, i.e. that this process does not share any cores with another process.
 Note that the default value of each parameter is -1.
-Thus, you must set both \lstinline|num_threads| and \lstinline|num_numa|
-in order for Kokkos to initialize the default host execution space.
 
 Here is an example of how to use the struct.
 \begin{lstlisting}
