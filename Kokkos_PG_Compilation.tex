@@ -34,10 +34,9 @@ Macro & Effect & Comment \\
 {\tiny KOKKOS\_HAVE\_CUDA} & Enable the CUDA execution space. & Requires a compiler capable of understanding CUDA-C. See Section \ref{S:build:CUDA}. \\
 {\tiny KOKKOS\_HAVE\_OPENMP} & Enable the OpenMP execution space. & Requires the compiler to support OpenMP (e.g., \verb!-fopenmp!). \\
 {\tiny KOKKOS\_HAVE\_PTHREADS} & Enable the Threads execution space. & Requires linking with libpthread.\\
+{\tiny KOKKOS\_HAVE\_Serial} & Enable the Serial execution space. & \\
 {\tiny KOKKOS\_HAVE\_CXX11} & Enable internal usage of C++11 features. & The code needs to be compile with the C++11 standard. Most compilers accept the \verb!-std=c++11! flag for this.\\
 {\tiny KOKKOS\_HAVE\_HWLOC} & Enable thread and memory pinning via hwloc. & Requires linking with libhwloc.\\
-{\tiny KOKKOS\_DONT\_INCLUDE \_KOKKOSCORE\_CONFIG\_H} & Do not include the KokkosCore\_config.h file. & Useful when providing all macros via the compile line instead of auto-generating that file. 
-This option is set for the embedded Makefile. \\
 \hline\hline
 \end{tabular}
 \end{small}
@@ -45,38 +44,111 @@ This option is set for the embedded Makefile. \\
 
 \section{Using Kokkos' Makefile system}\label{S:build:make}
 
-Kokkos provides an embedded Makefile (\lstinline|kokkos/Makefile.kokkos|) for inclusion in an application Makefile. 
-This embedded Makefile generates a \lstinline|KOKKOS_INC| and a \newline
-\lstinline|KOKKOS_LINK| variable which need to be appended to the compile and the link line respectively in the application Makefile. 
-If you want to include dependencies (i.e. trigger a rebuild of the application object files when Kokkos files change) you can include \lstinline|KOKKOS_HEADERS| in you dependency list.
-Note that you cannot compile and link at the same time!
-Makefile.kokkos uses a number of variables which can be set either in the parent Makefile prior to including it, or on the command line.
-These variables take the form of \lstinline|SOME_VAR=yes/no| or \lstinline|SOME_PATH=/path/to/library| and control build options such as the target architecture. 
-A list can be found in Table \ref{TBL:MakefileOptions}.
-Example application Makefiles can be found in the tutorial examples under \verb!kokkos/example/tutorial!.
-
-
+The base of the build system is the Makefile.kokkos, which is designed to be included by application Makefiles.
+It contains logic to (re)generate the KokkosCore\_config.h file if necessary, build the Kokkos library, and provide updated compiler and linker flags.
+    
+The system can digest a number of variables which are used to configure Kokkos settings. 
+Generally the variables are parsed for Keywords. 
+This allows for multiple options being given for each variable. 
+The separator doesn't matter as long as it doesn't interact with the Make system.
+A list of variables, their meaning and options is given in table \ref{TBL:MakefileOptions}. 
+    
 \begin{table}
-\caption{Table of Makefile options}
+\caption{Variables for the embedded Makefile}
 \label{TBL:MakefileOptions}
 \begin{small}
-\begin{tabular}[t]{lp{0.7\textwidth}}
+\begin{tabular}[t]{p{0.3\textwidth}p{0.65\textwidth}}
 \hline\hline
-Option & Description \\
+Variable & Description \\
 \hline
-CUDA & Enable the CUDA execution space. \\
-OMP & Enable the OpenMP execution space. \\
-PTHREADS & Enable the Threads execution space.\\
-MIC & Enable compilation for Intel Xeon Phi. \\
-CXX11 & Enable internal usage of C++11 features.\\
-HWLOC & Enable hwloc usage.\\
-LIBRT & Enable librt usage for the \lstinline|Kokkos::Impl::Timer| class.\\
-CUDA\_PATH & Set the path to the CUDA toolkit directory.\\
-HWLOC\_PATH & Set the path to the hwloc library.\\
+   KOKKOS\_PATH (IN): & Path to the Kokkos root or install directory. 
+                   One can either build against an existing install 
+                   of Kokkos or use its source directly for an 
+                   embedded build. In the former case the "Input variables"
+                   are set inside the embedded Makefile.kokkos and it 
+                   is not valid to set them differently in the including
+                   Makefile.\\
+
+\hline
+   CUDA\_PATH (IN): & Path to the Cuda toolkit root directory.\\
+
+\hline
+   HWLOC\_PATH (IN): & Path to the hardware locality library. \\
+
+
+\hline
+   KOKKOS\_DEVICES (IN): & What Execution and Memory Spaces should be enabled. \\
+      \hspace{0.5cm}Options: & OpenMP,Serial,Pthreads,Cuda \\
+      \hspace{0.5cm}Default: & OpenMP \\
+
+\hline    
+    KOKKOS\_ARCH (IN): & What backend Architecture to build for. \\
+      \hspace{0.5cm}Options: & KNC,SNB,HSW,Kepler,Kepler30,Kepler35,Kepler37,Maxwell,
+               Maxwell50,ARMv8,BGQ,Power7,Power8 \\
+      \hspace{0.5cm}Default: & None -- this means no particular architecture flags
+               are set. \\
+
+\hline
+    KOKKOS\_DEBUG (IN): & Enable debugging. \\
+      \hspace{0.5cm}Options: & yes,no \\
+      \hspace{0.5cm}Default: & no \\
+
+\hline
+    KOKKOS\_CXX\_STANDARD (IN): & Set the C++ standard to be used. \\
+      \hspace{0.5cm}Options: & c++11 \\
+      \hspace{0.5cm}Default: & c++11 \\
+
+\hline\hline
+
+    KOKKOS\_CPPFLAGS (OUT): & Pre processor flags (include directories and defines). 
+                              Add this to applications compiler and preprocessor flags. \\
+
+\hline
+    KOKKOS\_CXXFLAGS (OUT): & Compiler flags. Add this to the applications compiler flags. \\
+
+\hline
+    KOKKOS\_LDFLAGS (OUT): & Linker flags. Add this to the applications linker flags. \\
+
+\hline
+    KOKKOS\_LIBS (OUT): & Libraries required by Kokkos. Add this to the link line after the linker flags. \\
+
+\hline
+    KOKKOS\_CPP\_DEPENDS (OUT): & Dependencies for compilation units which include any Kokkos header files.
+                                  Add this as a dependency to compilation targets including any Kokkos code. \\
+
+\hline
+    KOKKOS\_LINK\_DEPENDS (OUT): & Dependencies of an application linking in the Kokkos library.
+                                   Add this to the dependency list of link targets. \\
+ 
+\hline\hline
+    CXXFLAGS (IN): & User provided compiler flags which will be used to compile the Kokkos library. \\
+
+\hline
+    CXX (IN): & The compiler used to compile the Kokkos library. \\
 \hline\hline
 \end{tabular}
 \end{small}
 \end{table}
+
+    A word of caution on where to include the Makefile.kokkos:
+    since the embedded Makefiles defines targets it is usually
+    better to include it after the first application target
+    has been defined. Since that target can't use the flags
+    from the embedded Makefiles it should be a meta target:
+
+\begin{lstlisting}    
+    CXX=g++
+    
+    default: main
+    
+    include Makefile.kokkos
+    
+    main: $(KOKKOS_LINK_DEPENDS) $(KOKKOS_CPP_DEPENDS) main.cpp
+        $(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) \
+        $(KOKKOS_LDFLAGS) $(KOKKOS_LIBS) main.cpp -o main
+\end{lstlisting}
+
+More example application Makefiles can be found in the tutorial examples under \verb!kokkos/example/tutorial!.
 
 \section{Using Trilinos' CMake build system}\label{S:build:Trilinos}
 

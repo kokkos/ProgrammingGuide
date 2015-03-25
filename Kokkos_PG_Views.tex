@@ -114,7 +114,6 @@ of those things may not be thread safe, like unprotected updates to
 global state.  Others may perform badly in parallel, like fine-grained
 dynamic memory allocation.  Therefore it is strongly advised to use 
 only simple data types inside Kokkos Views.
-
 Users may always construct a View whose entries are 
 \begin{itemize}
 \item built-in data types (``plain old data''), like \texttt{int} or
@@ -152,10 +151,10 @@ Note how in the above example, we only access the View's entries in a
 parallel loop body.  In general, you may only access a View's entries
 in an execution space which is allowed to access that View's memory
 space.  For example, if the default execution space is \lstinline!Cuda!, 
-a View for which no specific Memory Space was fiven may not be accessed 
+a View for which no specific Memory Space was given may not be accessed 
 in host code \footnote{An exemption is if you specified for CUDA compilation
 that the default memory space is CudaUVMSpace, which can be accessed from 
-the host.}
+the host.}.
 Furthermore, access costs (e.g., latency and
 bandwidth) may vary, depending on the View's ``native'' memory and
 execution spaces, and the execution space from which you access it.
