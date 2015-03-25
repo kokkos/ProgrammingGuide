@@ -440,7 +440,7 @@ corresponds exactly to \lstinline!const double*!, and
 
 Const Views often allow the compiler to optimize more agressively by allowing it
 to reason about possible write conflicts and data aliasing. For example in a vector
-update \lstinline|a(i+1)+=b(i) with skewed indexing it is safe to vectorize if
+update \lstinline|a(i+1)+=b(i)| with skewed indexing it is safe to vectorize if
 \lstinline|b| is a View of const data.
   
 \subsection{Memory Traits}
