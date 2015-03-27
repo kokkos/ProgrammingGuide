@@ -131,6 +131,35 @@ and deconstructor must be marked with \lstinline|KOKKOS_[INLINE_]FUNCTION|.
 Keep in mind that the semantics of the resulting View are a combination of the 
 Views 'view' semantics and the behaviour of the element type.
 
+\subsection{Const Views}
+
+A view can have const data semantics (i.e. its entries are read-only) by 
+specifying a `const` data type.  It is a compile-time error to assign to an 
+entry of a ``const View''.  Assignment semantics are equivalent to a pointer to 
+const data.  
+A const View means the \emph{entries} are const.  You
+may still assign to a const View.  \lstinline!View<const double*>!
+corresponds exactly to \lstinline!const double*!, and
+\lstinline!const View<double*>! to \lstinline!double* const!.
+Therefore it does not make sense to allocate a const View,
+since you could not obtain a non-const view of the same data and you 
+can not assign to it. You can however assign a non-const view to a const
+view.  Here is an example:
+\begin{lstlisting}
+const size_t N0 = ...;
+View<double*> a_nonconst ("a_nonconst", N0);
+
+// Assign a nonconst View to a const View
+View<const double*> a_const = a_nonconst;
+// Pass the const View to some read-only function.
+const double result = readOnlyFunction (a_const);
+\end{lstlisting}
+
+Const Views often enables the compiler to optimize more aggressively by allowing it
+to reason about possible write conflicts and data aliasing. For example in a vector
+update \lstinline|a(i+1)+=b(i)| with skewed indexing it is safe to vectorize if
+\lstinline|b| is a View of const data.
+
 \subsection{Accessing entries (indexing)}
 
 You may access an entry of a View using parentheses enclosing a
@@ -168,9 +197,7 @@ over which it is most efficient to do parallel array access if the
 default memory layout is used (e.g. if no specific memory layout is 
 specified).
 
-\subsection{Memory management and copying}
-
-\subsubsection{Reference counting}
+\subsection{Reference counting}
 
 Kokkos automatically manages deallocation of Views, through a
 reference-counting mechanism.  Otherwise, Views behave like raw
@@ -196,102 +223,31 @@ For efficiency, View allocation and reference counting turn off inside
 of Kokkos' parallel for, reduce, and scan operations.  This affects
 what you can do with Views inside of Kokkos' parallel operations.
 
-\subsubsection{Deep copy}
+\subsection{Resizing}
 
-If you want to make a deep copy of a View's contents, you must do so
-explicitly, using the \lstinline!deep_copy! function.  For example:
-\begin{lstlisting}
-View<int*> a ("a", 10);
-View<int*> b ("b", 10);
-deep_copy (a, b); // copy contents of b into a
-\end{lstlisting}
-
-\subsection{Where and how is the View allocated?}
-
-\subsubsection{Execution and memory spaces}
-
-Views are allocated by default, in the default execution space's
-default memory space.  You may access the View's execution space via
-its \lstinline!execution_space! typedef, and its memory space via its
-\lstinline!memory_space! typedef.  You may also specify the memory space
-explicitly as a template parameter.  For example, the following
-allocates a View in CUDA device memory:
-\begin{lstlisting}
-View<int*, CudaSpace> a ("a", 100000);
-\end{lstlisting}
-and the following allocates a View in ``host'' memory, using the default 
-host execution space for first-touch initialization:
-\begin{lstlisting}
-View<int*, HostSpace> a ("a", 100000);
-\end{lstlisting}
-
-Since there is no bijective association between execution spaces and memory 
-spaces, Kokkos provides a way to explicitly provide both to a View as a 
-\lstinline|Device|. 
-\begin{lstlisting}
-View<int*, Device<Cuda,CudaUVMSpace> > a ("a", 100000);
-View<int*, Device<OpenMP,CudaUVMSpace> > b ("b", 100000);
-\end{lstlisting}
-In this cas \lstinline|a| and \lstinline|b| will live in the same memory space,
-but \lstinline|a| will be initialized on the GPU while \lstinline|b| will be 
-initialized on the host. 
-
-\subsubsection{Initialization}
-
-A View's entries are initialized to zero by default.  Initialization
-happens in parallel, for first-touch allocation over the first
-(leftmost) dimension of the View.
-
-You may allocate a View without initializing.  For example:
-\begin{lstlisting}
-View<int*> x (ViewAllocateWithoutInitializing (label), 100000);
-\end{lstlisting}
-This is useful in situations where your dominant use of the View
-exhibits a complicated access pattern. In this case it is best
-to run the most costly kernel directly after initialization to 
-execute the first touch pattern and get optimal memory affinity.
-
-\subsection{How do I get the raw pointer?}
-
-We discourage access to a View's ``raw'' pointer.  This circumvents
-reference counting.  That is, the memory may be deallocated once the
-View's reference count goes to zero, so holding on to a raw pointer
-may result in invalid memory access.  Furthermore, it may not even be
-possible to access the View's memory from a given execution space.
-For example, a View in the \lstinline!Cuda! space points to CUDA device
-memory. Also using raw pointers would normally defeat the usability 
-of polymorpic layouts and automatic padding. 
-Nevertheless, sometimes you really need access to the
-pointer.  For such cases, we provide the \lstinline!ptr_on_device()!
-method.  For example:
-\begin{lstlisting}
-// Legacy function that takes a raw pointer.
-extern void legacyFunction (double* x_raw, const size_t len);
-
-// Your function that takes a View.
-void myFunction (const View<double*>& x) {
-  // DON'T DO THIS UNLESS YOU MUST
-  double* a_raw = a.ptr_on_device ();
-  const size_t N = x.dimension_0 ();
-  legacyFunction (a_raw, N);
-}
-\end{lstlisting}
-A user is in most cases also allowed to obtain a pointer to a specific 
-element via the usual \lstinline|&| operator. For example
+Kokkos Views can be resized using the \lstinline|resize| non-member function.
+It takes an existing view as its input by reference and the new dimension information
+corresponding to the constructor arguments. A new view with the new dimensions will
+be created and a kernel will be run in the views execution space to copy the data 
+element by element from the old view to the new one. Note that the old allocation is 
+only deleted if the view to be resized was the {\it only} view referencing the underlying 
+allocation. 
 
 \begin{lstlisting}
-// Legacy function that takes a raw pointer.
-void someLibraryFunction (double* x_raw);
+// Allocate a view with 100x50x4 elements 
+View<int**[4]> a( "a", 100,50);
 
-KOKKOS_INLINE_FUNCTION
-void foo(const View<double*>& x) {
-  someLibraryFunction(&x[3]);
-}
-\end{lstlisting}
+// Resize a to 200x50x4 elements; the original allocation is freed
+resize(a, 200,50);
 
-This is only valid if a Views reference type is an \lstinline|lvalue|.
-That property can be queried statically at compile time from the view through
-its \lstinline|reference_is_lvalue| member. 
+// Create a second view b viewing the same data as a
+View<int**[4]> b = a;
+// Resize a again to 300x60x4 elements; b is still 200x50x4
+resize(a,300,60);
+\end{lstlisting} 
+ 
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -367,7 +323,8 @@ memory.  This \emph{coalesced access} gives the code better memory
 bandwidth.  In contrast, \lstinline!View<int**, OpenMP>! has
 \lstinline!LayoutRight!, so that a single thread accesses contiguous
 entries of the array.  This avoids wasting cache lines and helps
-prevent false sharing of a cache line between threads.
+prevent false sharing of a cache line between threads. 
+In section \ref{S:View:Placement} more details will be discussed. 
 
 \subsection{Explicitly specifying layout}\label{SS:View:Layout:Explicit}
 
@@ -405,73 +362,235 @@ void callBlas (const ViewType& A) {
 \section{Managing Data Placement}\label{S:View:Placement}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-TODO: Hey Christian, what did you mean by this?
+\subsection{Memory spaces}
 
-Christian says: \lstinline!CudaSpace!, \lstinline!HostSpace!, etc.
-Also, please emphasize memory space over execution space, and talk
-about the UVM and pinned variants of \lstinline!CudaSpace!.
+Views are allocated by default, in the default execution space's
+default memory space.  You may access the View's execution space via
+its \lstinline!execution_space! typedef, and its memory space via its
+\lstinline!memory_space! typedef.  You may also specify the memory space
+explicitly as a template parameter.  For example, the following
+allocates a View in CUDA device memory:
+\begin{lstlisting}
+View<int*, CudaSpace> a ("a", 100000);
+\end{lstlisting}
+and the following allocates a View in ``host'' memory, using the default 
+host execution space for first-touch initialization:
+\begin{lstlisting}
+View<int*, HostSpace> a ("a", 100000);
+\end{lstlisting}
+
+Since there is no bijective association between execution spaces and memory 
+spaces, Kokkos provides a way to explicitly provide both to a View as a 
+\lstinline|Device|. 
+\begin{lstlisting}
+View<int*, Device<Cuda,CudaUVMSpace> > a ("a", 100000);
+View<int*, Device<OpenMP,CudaUVMSpace> > b ("b", 100000);
+\end{lstlisting}
+In this case \lstinline|a| and \lstinline|b| will live in the same memory space,
+but \lstinline|a| will be initialized on the GPU while \lstinline|b| will be 
+initialized on the host. 
+The \lstinline|Device| type can be accessed as a views \lstinline|device_type|
+typedef. A \lstinline|Device| has only three typedef members 
+\lstinline|device_type|, \lstinline|execution_space|, and \lstinline|memory_space|.
+The \lstinline|execution_space|, and \lstinline|memory_space| typedefs are
+the same for a view and the \lstinline|device_type| typedef.
+
+It is important to understand that accessibility of a View does not 
+depend on its execution space directly. It is only determined by its
+memory space. Therefore both \lstinline|a| and \lstinline|b| have the 
+same access properties. They differ only in how they are initialized, 
+as well as in where parallel kernels associated with operations such 
+as resizing or deep copies are run. 
+
+\subsection{Initialization}
+
+A View's entries are initialized to zero by default.  Initialization
+happens in parallel, for first-touch allocation over the first
+(leftmost) dimension of the View using the execution space
+of the View. 
+
+You may allocate a View without initializing.  For example:
+\begin{lstlisting}
+View<int*> x (ViewAllocateWithoutInitializing (label), 100000);
+\end{lstlisting}
+This is useful in situations where your dominant use of the View
+exhibits a complicated access pattern. In this case it is best
+to run the most costly kernel directly after initialization to 
+execute the first touch pattern and get optimal memory affinity.
+
+\subsection{Deep copy and HostMirror}
+
+Copying data from one view to another, in particular between views 
+in different memory spaces, is called deep copy. 
+Kokkos never performs a hidden deep copy. To do so a user has to 
+call the \lstinline!deep_copy! function.  For example:
+\begin{lstlisting}
+View<int*> a ("a", 10);
+View<int*> b ("b", 10);
+deep_copy (a, b); // copy contents of b into a
+\end{lstlisting}
+
+Deep copies can only be performed between views with an identical 
+memory layout and padding. For example the following two operations
+are not valid:
+\begin{lstlisting}
+View<int*[3]> a ("a", CudaSpace, 10);
+View<int*[3]> b ("b", HostSpace, 10);
+deep_copy (a, b); // This will give a compiler error
+
+View<int*[3], LayoutLeft> c ("c", CudaSpace, 10);
+View<int*[3], LayoutLeft> d ("d", HostSpace, 10);
+deep_copy (c, d); // This might give a runtime error
+\end{lstlisting}
+
+The first one will not work because the default layouts of \lstinline|CudaSpace|
+and \lstinline|HostSpace| are different. The compiler will catch that since 
+no overload of the \lstinline|deep_copy| function exists to copy view from
+one layout to another. The second case will fail at runtime if padding settings
+are different for the two memory spaces. This would result in different 
+allocation sizes and thus prevent a direct memcopy. 
+
+The reasoning for allowing only direct bitwise copies is that a deep copy
+between different memory spaces would otherwise require a temporary 
+copy of the data to which a bitwise copy is performed followed by a parallel
+kernel to transfer the data element by element. 
+
+Kokkos provides the following way to work around those limitations. 
+First views have a \lstinline|HostMirror| typedef which is a view type with 
+compatible layout inside the \lstinline|HostSpace|. Additionally there is a
+\lstinline|create_mirror| and \lstinline|create_mirror_view| function which 
+allocate views of the \lstinline|HostMirror| type of a view. 
+The difference between the two is that \lstinline|create_mirror| will always
+allocate a new view, while \lstinline|create_mirror_view| will only create a 
+new view if the original one is not in \lstinline|HostSpace|.
+
+\begin{lstlisting}
+View<int*[3]> a ("a", MemorySpace, 10);
+// Allocate a view in HostSpace with the 
+// layout and padding of a
+typename View<int*[3]>::HostMirror b =
+    create_mirror(a);
+// This is always a memcopy
+deep_copy (a, b); 
+
+typename View<int*[3]>::HostMirror c =
+    create_mirror_view(a);
+// This is a no-op if MemorySpace is HostSpace
+deep_copy (a,c)
+\end{lstlisting}
+
+
+\subsection{How do I get the raw pointer?}
+
+We discourage access to a View's ``raw'' pointer.  This circumvents
+reference counting.  That is, the memory may be deallocated once the
+View's reference count goes to zero, so holding on to a raw pointer
+may result in invalid memory access.  Furthermore, it may not even be
+possible to access the View's memory from a given execution space.
+For example, a View in the \lstinline!Cuda! space points to CUDA device
+memory. Also using raw pointers would normally defeat the usability 
+of polymorpic layouts and automatic padding. 
+Nevertheless, sometimes you really need access to the
+pointer.  For such cases, we provide the \lstinline!ptr_on_device()!
+method.  For example:
+\begin{lstlisting}
+// Legacy function that takes a raw pointer.
+extern void legacyFunction (double* x_raw, const size_t len);
+
+// Your function that takes a View.
+void myFunction (const View<double*>& x) {
+  // DON'T DO THIS UNLESS YOU MUST
+  double* a_raw = a.ptr_on_device ();
+  const size_t N = x.dimension_0 ();
+  legacyFunction (a_raw, N);
+}
+\end{lstlisting}
+A user is in most cases also allowed to obtain a pointer to a specific 
+element via the usual \lstinline|&| operator. For example
+
+\begin{lstlisting}
+// Legacy function that takes a raw pointer.
+void someLibraryFunction (double* x_raw);
+
+KOKKOS_INLINE_FUNCTION
+void foo(const View<double*>& x) {
+  someLibraryFunction(&x[3]);
+}
+\end{lstlisting}
+
+This is only valid if a Views reference type is an \lstinline|lvalue|.
+That property can be queried statically at compile time from the view through
+its \lstinline|reference_is_lvalue| member. 
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Access traits}\label{S:View:AccessTraits}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Const Views}
-
-Different optional template parameters of View let you control how
-Kokkos accesses entries of the array.  The simplest example involves
-making a View \lstinline!const!, that is, making its entries read-only.  It
-is a compile-time error to assign to an entry of a const View.  It
-does not make sense to allocate a const View, but it does make sense
-to assign a non-const View to a const View.  Here is an example:
-\begin{lstlisting}
-const size_t N0 = ...;
-View<double*> a_nonconst ("a_nonconst", N0);
-
-// Assign a nonconst View to a const View
-View<const double*> a_const = a_nonconst;
-// Pass the const View to some read-only function.
-const double result = readOnlyFunction (a_const);
-\end{lstlisting}
-Note that a ``const View'' means the \emph{entries} are const.  You
-may still assign to a const View.  \lstinline!View<const double*>!
-corresponds exactly to \lstinline!const double*!, and
-\lstinline!const View<double*>! to \lstinline!double* const!.
-
-Const Views often allow the compiler to optimize more agressively by allowing it
-to reason about possible write conflicts and data aliasing. For example in a vector
-update \lstinline|a(i+1)+=b(i)| with skewed indexing it is safe to vectorize if
-\lstinline|b| is a View of const data.
-  
-\subsection{Memory Traits}
 
 Another way to get optimized data accesses is to specify a memory trait. 
 These traits are used to declare intended use of the particular view of 
 an allocation. For example a particular kernel might use a view only for 
 streaming writes. By declaring that intention Kokkos can insert the 
-appropriate store intrinsics on each architecture if available. 
+appropriate store intrinsics on each architecture if available. Access traits
+are specified through an optional template parameter which comes last in the list
+of parameters. Multiple traits can be combined with binary ``or'' operators: 
 
-Currently 
-In particular, Kokkos lets you declare that you plan
-to access a read-only array irregularly (less spatial locality), using
-the optional \lstinline!RandomAccess! template parameter.  You may only use
-this with a const View.  For example:
+\begin{lstlisting}
+View<double*, MemoryTraits<SomeTrait> > a;
+View<const double*, MemoryTraits<SomeTrait | SomeOtherTrait> > b;
+View<double*, LayoutLeft, MemoryTraits<SomeTrait | SomeOtherTrait> > c;
+View<double*, MemorySpace, MemoryTraits<SomeTrait | SomeOtherTrait> > d;
+View<double*, LayoutLeft, MemorySpace, MemoryTraits<SomeTrait> > e;
+\end{lstlisting}
+
+\subsection{Atomic access}
+
+The \lstinline!Atomic! access trait lets you create a View of data , such that every
+read or write to any entry uses an atomic update.  This only works for
+certain data types, for which the hardware and programming model
+support atomic updates.  Currently, Kokkos limits atomic updates to
+32-bit or 64-bit types\footnote{On X86 architectures Kokkos also supports 
+128-bit atomics. Types for which atomic access are performed must support the 
+necessary operators such as =,+=,-=,+,- etc.}.
+
+Note that it is a violation of the semantics to write \emph{or} read from a 
+non-atomic view of data if at the same time an atomic view of the data is used.
+
+\begin{lstlisting}
+View<int*> a("a" , 100);
+View<int*, MemoryTraits<Atomic> > a_atomic = a;
+
+a_atomic(1) += 1; // This access will do an atomic addition
+\end{lstlisting} 
+
+\subsection{Random Access}
+
+The \lstinline|RandomAccess| trait declares the intent to access a View
+irregularly (in particular non consecutively). If used for a const View 
+in the \lstinline|CudaSpace| or \lstinline|CudaUVMSpace|, Kokkos will use 
+texture fetches for accesses when executing in the \lstinline|Cuda| execution
+space.
+For example:
 \begin{lstlisting}
 const size_t N0 = ...;
 View<int*> a_nonconst ("a", N0); // allocate nonconst View
 // Assign to const, RandomAccess View
 View<const int*, RandomAccess> a_ra = a_nonconst;
 \end{lstlisting}
-For a View whose execution space is \lstinline!Cuda!, access to a
+If the default execution space is \lstinline!Cuda!, access to a
 \lstinline!RandomAccess! View may use CUDA texture fetches.  Texture
 fetches are not cache coherent with respect to writes, which is why
 you must use read-only access.  The texture cache is optimized for
 noncontiguous access, since it has a shorter cache line than the
 regular cache.
 
-\lstinline!RandomAccess! is valid for other execution spaces, and Kokkos
-also requires a const View for those execution spaces.  Kokkos
-reserves the right to perform analogous optimizations on other
-execution spaces.
+While \lstinline!RandomAccess! is valid for other execution spaces, 
+currently no specific optimizations are performed. But in the future a view
+allocated with the \lstinline!RandomAccess! attribute might for example
+use a larger page size, and thus reducing page faults in the memory 
+system.
 
 \subsection{Standard idiom for specifying access traits}
 
@@ -529,7 +648,7 @@ double* x_raw = malloc (N0 * sizeof (double));
   // host memory space HostSpace.  Unmanaged
   // Views have no label, because labels work with
   // the reference counting system.
-  View<double*, HostSpace, Unmanaged> x_view (x_raw, N0);
+  View<double*, HostSpace, MemoryTraits<Unmanaged> > x_view (x_raw, N0);
 
   functionThatTakesKokkosView (x_view);
 
@@ -539,10 +658,3 @@ double* x_raw = malloc (N0 * sizeof (double));
 free (x_raw);
 \end{lstlisting}
 
-\subsection{Atomic access}
-
-The \lstinline!Atomic! access trait lets you create a View, such that every
-read or write to any entry uses an atomic update.  This only works for
-certain data types, for which the hardware and programming model
-support atomic updates.  Currently, Kokkos limits atomic updates to
-32-bit or 64-bit built-in types.
