@@ -1,0 +1,24 @@
+\chapter{Interoperability and Legacy Codes}
+\section{Legacy data structures}
+
+There are two principal mechanism to facilitate interoperability with legacy data 
+structures: (i) Kokkos allocates data and raw pointers are extracted to create 
+legacy data structures and (ii) unmanaged views can be used to view externally 
+allocated data. In both cases it is mandatory to fix the Layout of the Kokkos view
+to the actual layout used in the legacy data structure.
+
+\subsection{Kokkos manages memory}
+
+\subsubsection{Raw allocations}
+\subsubsection{Views as the fundamental data owning structure}
+
+
+\subsection{External memory management}
+
+\subsection{\lstinline|std::vector|}
+
+\section{Calling non-Kokkos libraries}
+
+\section{Keeping track of data transfers}
+
+ 
