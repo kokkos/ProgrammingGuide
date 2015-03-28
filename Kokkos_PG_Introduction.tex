@@ -2,28 +2,54 @@
 
 \chapter{Introduction}\label{C:intro}
 
-The field of High Performance Computing (HPC) is entering a new era.
-Since the mid 1990's, HPC applications have had great success 
-with distributed-memory parallel computing using the Message-Passing Interface (MPI).
-However, after two decades of MPI dominance, 
-increasing core counts on standard processors and the emergence of new throughput-oriented processors, such as GPUs, make a new approach necessary.
-MPI will not necessarily go away,
-but application developers will need to expose finer-grained shared-memory parallelism
-\emph{as well as} coarser-grained MPI-level parallelism,
-in order to get their money's worth on new architectures.
+\noindent
+The field of High Performance Computing (HPC) is on the verge of entering a new era. The need
+for a fundamental change comes from many angles including the growing acceptance that rates of
+pure computation (often called FLOP/s) are a poor single optimization goal for scientific
+workloads as well as practical challenges in the form of producing energy efficient and cost
+efficient processors. Since the convergence on the Message-Passing Interface (MPI) standard
+in the mid 1990s, application developers have enjoyed a fairly static view of the machine --
+that of a distributed collection of homogeneous nodes executing in collaboration. However, 
+after almost two decades of domaince, the sole use of MPI to derive parallelism is acting as
+a potential limiter to greater future performance. While we expect MPI to continue to function
+as the basic mechanism for communication between compute nodes, additional parallelism is
+likely to be required on the computing node itself if high performance and efficiency are to be
+realized.
 
-Developers have many shared-memory parallel programming model options today.
-Those include OpenMP, OpenACC, CUDA, TBB, Cilk, OpenCL, and C++AMP, among others.
-Some of these programming models are vendor specific, while others have varying degrees of support on different hardware. 
-Most of the models lack a concept to handle complex memory hierarchies, 
-which in addition to threading is one of the defining upcoming trends in HPC. 
+In reviewing potential options for the computing nodes of the future the reader might fall
+upon three broad categories of computing device: (1) the multi-core processor with powerful
+serial performance, optimized to reduce operation latency; (2) many-cores processors with
+low to medium powered compute cores that are designed to extent the multi-core concept toward
+throughput based computation and, finally, (3), the general-purpose graphics processor unit
+(GP-GPU, or often, GPU) which is a much more numerous collection of low powered cores designed
+to tolerate long latencies but provide performance through a much higher degree of 
+parallelism. Any combination of these options might also be combined in the future.
 
-The Kokkos programming model addresses the increasing complexity and variety of hardware architectures
-through a rigorous introduction of parallel execution and memory handling abstractions.
-These abstraction layers isolate a software developer from hardware details and allow the implementation of performance-portable applications.
+The diversity of the options available for processor selection raises as interested question
+as to how these should be programmed. Partly due to their heritage but also due to their
+optimized designs, each of these hardware types offers a different programming solution and
+a different set of guidelines to write applications to for highest performance. Options available
+today include a number of shared memory approaches such as OpenMP, Cilk+, Thread Building Blocks
+(TBB) as well as Linux p-threads. To target both contemporary multi/many-core processors and
+GPUs technologies such as OpenMP, OpenACC and OpenCL might be used. Finally, for GPUs a 
+programming model such as CUDA may be selected. This poses a problem to the application
+developer of today which is reminiscent of the challenges before MPI became the default
+communication library -- which model should be selected to provide portability across hardware
+solutions as well as provide reasonable to high performance across each class of processor and
+protect algorithm investment into the future. So far none of these models have been able to 
+provide practical solutions to these questions.
 
-This Guide covers both the programming model, and its implementation as an embedded C++ library.
-It describes the abstraction concepts employed in Kokkos and their exposure as a C++ interface.
-We intend it as an introduction for new users as well as a reference for application developers already using Kokkos.
-We have also supplemented the Guide with tutorial examples in the \verb!example! subdirectory of Kokkos' source code.
+The Kokkos programming model described in this programming guide seeks to address these
+concerns by providing an abstraction of both computation and application data allocation and
+layout. These abstraction layers are designed specifically to isolate software developers for
+the fluctuation in hardware details yet provide portability and high levels of performance
+across architectures.
+
+This guide provides an introduction to the motivations of developing such an abstraction library,
+a coverage of the programming model and its implementation as an embedded C++ library requiring
+no additional modifications to the base C++ language. As such it should be seen as an introduction
+for new users and as a reference for application developers who are already employing Kokkos
+in their applications. Finally, supplementary tutorial examples are included as part of the
+Kokkos software release to help users experiment and explore the programming model through a 
+gradual series of steps.
 
