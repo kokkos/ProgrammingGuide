@@ -66,6 +66,14 @@ compute engines and available memories are required.
 
 \subsection{Kokkos Execution Spaces}
 
+\begin{figure}
+\begin{center}
+\includegraphics[width=4in]{figures/kokkos-execution-space.pdf}
+\caption{Example Execution Spaces in a Future Computing Node}
+\label{fig:kokkos_execution_spaces}
+\end{center}
+\end{figure}
+
 Kokkos uses the term {\em execution spaces} to describe a logical
 grouping of computation units which share an indentical set of
 performance properties. An execution space provides a set of 
@@ -98,6 +106,14 @@ required for parallel execution in the execution space.
 
 \subsection{Kokkos Memory Spaces}
 
+\begin{figure}
+\begin{center}
+\includegraphics[width=4in]{figures/kokkos-memory-space.pdf}
+\caption{Example Memory Spaces in a Future Computing Node}
+\label{fig:kokkos_memory_spaces}
+\end{center}
+\end{figure}
+
 The multiple types of memory which will become available in future
 computing nodes are abstracted by Kokkos through {\em memory
 spaces}. Each memory space provides a finite storage capacity
@@ -127,14 +143,47 @@ routines and any associated data management operations including
 releasing the memory and returning it for future use, as well as
 copy operations.
 
+\subsubsection{Atomic accesses to Memory in Kokkos}
+
+In cases where multiple executing threads attempt to read
+a memory address, complete a computation on the item and
+write it back to same address in memory, an ordering
+collision may occur. These situations, known as
+{\em race conditions} (because the data value
+stored in memory are the threads complete is dependent
+on which thread completes its memory operation last),
+are often the cause of non-determinism in parallel
+programs. A number of methods can be employed to ensure
+that race conditions do not occur in parallel programs
+including the use of locks (which allow only a single
+thread to gain access to data structure at a time),
+critical regions (which allow only one thread to execute
+a code sequence at any point in time) and {\em atomic}
+operations. Memory operations which are atomic guarantee
+that a read, simple computation, and write to memory
+are completed a single unit. This might allow application
+programmers to safely increment a memory value for instance,
+or, more commonly, to safely accumulate values from multiple
+threads into a single memory locations.
+
+Although atomic operations are logically an operation
+on memory, they are performed by compute units and so
+are a property of execution spaces in the Kokkos framework.
+Execution spaces are not guaranteed to provide atomic
+operations support but attempts to use them on spaces
+which do not support atomic access will result in 
+a compile time error.
+
+
 \subsubsection{Memory Consistency in Kokkos}
 
 Memory consistency models are a complex topic in and of themselves
 and usually rely on complex operations associated with hardware
-caches (for more information see reference~\cite{handp_hardware}. 
-Kokkos itself does not {\em require} caches to be present
+caches or memory access coherency (for more information 
+see reference~\cite{handp_hardware}. 
+Kokkos, does not {\em require} caches to be present
 in hardware and so assumes an extremely weak memory consistency
-model. In this model, the programmer should not assume any
+model. In the Kokkos model, the programmer should not assume any
 specific ordering of memory operations being isused by a
 kernel. This has the potential to create race conditions between
 memory operations if these are not appropriately protected. In
@@ -146,7 +195,6 @@ programmers are thereby able to ensure that guarantees can
 be made as to when data will {\em definitely} have been 
 written to memory.
 
-\subsubsection{Atomic accesses to Memory in Kokkos}
 
 
 \section{Thread teams}\label{S:Model:Teams}
@@ -265,35 +313,3 @@ Thread safety with respect to Kokkos' threads is a different matter.
 View (see Chapter \ref{C:View}) promises safety of its memory management.
 That is, you may safely access Views inside of Kokkos' parallel operations.
 Kokkos provides some synchronization constructs as well; see the following section.
-
-\section{Memory consistency}\label{S:Model:Consistency}
-
-A \emph{memory consistency model} describes the behavior of a memory space $M$,
-with respect to multiple threads running in an execution space $E$
-that access the same data in $M$ concurrently.
-One may also encounter this idea as the phrase ``cache coherency.''
-We prefer ``memory consistency,'' because Kokkos does not require caches.
-Consistency models are a complicated subject which we cannot cover in sufficient detail here.
-We encourage readers to refer to standard computer hardware textbooks,
-like ``Computer Architecture: A Quantitative Approach'' (Hennessy and Patterson, 2011).
-
-Kokkos imposes a very weak consistency model across an entire execution space.
-For example, it does \emph{not} assume sequential consistency.
-Much like MPI 3 one-sided communication
-or other partitioned global address space (PGAS) programming models,
-Kokkos requires an execution space to issue a \emph{memory fence}
-to a given memory space, 
-in order to bring that memory space into a consistent state.
-The fence forces completion of all outstanding memory writes,
-and reorders all loads to occur after all those writes complete.
-
-\subsection{Atomic updates}\label{SS:Model:Consistency:Atomic}
-
-Some execution spaces may implement \emph{atomic updates} with respect to some memory spaces.
-An atomic update runs on an execution space, and changes a word of data in a memory space.
-The atomic update behaves atomically with respect to other atomic updates happening concurrently by that execution space on that memory space.
-``Behaves atomically'' means that all of the atomic updates will complete,
-and the word of data will be changed in a way that respects some order of those update operations.
-Kokkos does not promise any particular order.
-Furthermore, for a nonatomic memory read or write to ``see'' the results of atomic updates,
-the execution space must first execute a \lstinline!fence()! operation to that memory space.
