@@ -32,15 +32,20 @@ valid.
 \subsection{Kokkos Abstract Machine Model}
 
 \begin{figure}
-\includegraphics[width=2in]{figures/kokkos-node.pdf}
+\begin{center}
+\includegraphics[width=4in]{figures/kokkos-node.pdf}
 \caption{Conceptual Model of a Future High Performance Computing Node}
 \label{fig:kokkosnode}
+\end{center}
 \end{figure}
 
 Kokkos assumes an {\em abstract machine model} for the design of
 future shared-memory computing architectures. The model (shown in
 Figure~\ref{fig:kokkosnode}) assumes that there may be multiple
-execution units in a compute node. In the Figure we have elected to
+execution units in a compute node. For a more general discussion
+of abstract machine models for Exascale computing the reader should
+consult reference~\cite{cal_amm}. In the figure shown here,
+we have elected to
 show two different types of compute units -- one which represents
 multiple latency-optimized cores, similar to contemporary processor
 cores, and a second source of compute in the form of an off die

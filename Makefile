@@ -1,5 +1,6 @@
 
 PDFENGINE=pdflatex
+BIBENGINE=bibtex
 
 TEXFILES=\
 	Kokkos_PG_MachineModel.tex \
@@ -10,9 +11,14 @@ TEXFILES=\
 	Kokkos_PG_Initialization.tex \
 	Kokkos_PG_Subviews.tex \
 	Kokkos_PG_Introduction.tex \
-	Kokkos_PG_Views.tex
+	Kokkos_PG_Views.tex \
+	Kokkos_PG.bib
 
 Kokkos_PG.pdf: $(TEXFILES)
+	$(PDFENGINE) Kokkos_PG.tex
+	$(BIBENGINE) Kokkos_PG	
+	$(PDFENGINE) Kokkos_PG.tex
+	$(BIBENGINE) Kokkos_PG	
 	$(PDFENGINE) Kokkos_PG.tex
 
 clean:
