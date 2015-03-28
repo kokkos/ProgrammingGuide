@@ -1,4 +1,5 @@
-\chapter{Machine model}\label{C:Model}
+\chapter{Machine model}
+\label{C:Model}
 
 After reading this chapter, you will understand the abstract model of
 a shared-memory parallel computer which underlies Kokkos.  
@@ -15,91 +16,112 @@ All code that uses Kokkos involves relations between memory and execution spaces
 % copy data between any two different memory spaces by using
 % \lstinline!deep_copy!.
 
-\section{Motivation}\label{S:Model:Motivation}
+\section{Motivation}\label{S:Model:Motivations}
 
-Kokkos is a programming model which happens to have a C++ implementation.
-As you are first learning Kokkos,
-you may find yourself focusing on details of the implementation,
-especially if you have less experience with C++ syntax.
-However, as the syntax becomes more familiar to you,
-you will find it more and more helpful to understand the underlying abstractions.
+Kokkos is comprised of two orthogonal aspects. The first of these is 
+an underlying {\em abstract machine model} which describes fundamental
+concepts required for the development of future portable and performant
+high performance computing applications; the second is a concrete instantiation
+of the programming this model written in C++, which allows programmers
+to write to the concept machine model. It is important to treat these
+two aspects to Kokkos as distinct entities because the underlying model
+being used by Kokkos could, in the future, be instantiated in additional
+languages beyond C++ yet the algorithmic specification would remain
+valid.
 
-Kokkos assumes an \emph{abstract machine model},
-which represents a shared-memory parallel computer architecture.
-The model may represent either a stand-alone computer,
-like a laptop or workstation,
-or a single ``parallel process'' in a distributed-memory parallel programming model such as MPI (the Message-Passing Interface).
-In general, we write \emph{node} to describe the hardware that Kokkos governs.
-Kokkos' machine model lets programmers reason about very complicated heterogenous node architectures.
-It also lets them start with simple, even sequential architectures,
-and gradually port code from there to perform well on more complicated computer architectures.
-The abstract machine model might look complicated,
-but it reflects computers that companies are actually designing and building.
-Many chapters in this Guide show how to use the more complex aspects of the model.
-For example, see Chapter \ref {C:Hierarchical},
-which shows how to use Kokkos to expose multiple levels of parallelism.
+\subsection{Kokkos Abstract Machine Model}
 
-The point of this chapter is that \emph{respecting the abstract machine model ensures performance portability}.
-The phrase \emph{performance portability} means that the same code performs reasonably well on many different computer architectures,
-with no or minimal\footnote{For example, users might change a single C++ typedef or a single configure-time option.} changes to code.
-Kokkos depends on this abstract machine model for performance portability.
-\emph{Implementations} of Kokkos may depend on other things for performance portability.
-For example, efficiency of \lstinline!parallel_for! in the C++ implementation relies in part on compilers' ability to inline code.
-One could imagine a different Kokkos implementation based on source-to-source translation,
-that inlines parallel loop bodies into \lstinline!parallel_for! before they reach the compiler.
-Kokkos' OpenMP and Pthreads back-ends may rely on the Portable Hardware Locality (hwloc) library
-to control assignment of software threads to hardware cores or hyperthreads.
-However, Kokkos as an abstract programming model does not depend on these things.
+\begin{figure}
+\includegraphics[width=2in]{figures/kokkos-node.pdf}
+\caption{Conceptual Model of a Future High Performance Computing Node}
+\label{fig:kokkosnode}
+\end{figure}
 
-\section{Memory spaces and execution spaces}\label{S:Model:Spaces}
+Kokkos assumes an {\em abstract machine model} for the design of
+future shared-memory computing architectures. The model (shown in
+Figure~\ref{fig:kokkosnode}) assumes that there may be multiple
+execution units in a compute node. In the Figure we have elected to
+show two different types of compute units -- one which represents
+multiple latency-optimized cores, similar to contemporary processor
+cores, and a second source of compute in the form of an off die
+accelerator. Of note is that the processor and accelerator each 
+have distinct memories, each with unique performance properties,
+that are accessible across the node ({\em i.e.} the memory is
+reachable or {\em shared} by all execution units. The specific
+layout shown in Figure~\ref{fig:kokkosnode} is an instantiation
+of the Kokkos abstract machine model used to describe the potential
+for multiple types of compute engines and memories within a single
+node. In future systems there may be a range of execution engines
+which are used in the node ranging from a single type of core
+as in many/multi-core processors found today through to an range
+of execution units where many-core processors may be joined to
+numerous types of accelerator cores. In order to ensure portability
+to the potential range of nodes an abstraction of the
+compute engines and available memories are required.
 
-A \emph{memory space} contains data.
-Users access those data as k-dimensional typed arrays, where k may be any nonnegative integer.
-(Zero-dimensional arrays are single values.  See Chapter \ref{C:View} for details.)
-% In the C++ implementation of the Kokkos programming model,
-% these memory addresses are pointers,
-% which point to contiguous address ranges,
-% each of which represents an allocation of data.
-The memory space controls dynamic allocation and deallocation of those arrays,
-if it allows them at all.
+\subsection{Kokkos Execution Spaces}
 
-An \emph{execution space} runs Kokkos' parallel operations,
-like parallel for, reduce, and scan.  (See Chapter \ref{C:Dispatch}.)
-It may access data in some available memory spaces.
-Whether an execution space may access data in a memory space
-depends on \emph{both} the execution space and the memory space.
+Kokkos uses the term {\em execution spaces} to describe a logical
+grouping of computation units which share an indentical set of
+performance properties. An execution space provides a set of 
+parallel execution resources which can be utilized by the
+programmer using several types of fundamental parallel
+operation. For a list of the operations available see
+Chapter~\ref{C:Dispatch}.
 
-\subsection{Types and instances of spaces}\label{SS:Model:Spaces:Types}
+\subsubsection{Execution Space Instances}
 
-Kokkos distinguishes between \emph{types} of spaces, and \emph{instances} of spaces.
-For example, a node might have multiple NVIDIA GPUs.
-All of these GPUs' memory spaces have the type \lstinline!Kokkos::CudaSpace!,
-but each space is a different instance of \lstinline!Kokkos::CudaSpace!.
-The common case of using Kokkos presumes a single instance of a given execution or memory space.
-In that case, one uses the type of the space as a synonym for the default (single) instance of that space.
-When we speak of a space by its type,
-we mean the default single instance of that space,
-unless we say otherwise.
+An {\em instance} of an execution space is a specific instantiation
+of an execution space to which a programmer can target parallel
+work. By means of example, an execution space might be used
+to describe a multi-core processor. In this example, the
+execution space contains several homogeneous cores which share
+some logical grouping. In a program written to the Kokkos model,
+an instance of this execution space would be made available
+on which parallel kernels could be executed. As a second example,
+if we were to add a GPU to the multi-core processor a second
+execution space type is available in the system, the 
+application programmer would then have two 
+execution space instances available to select from. The
+important consideration here is that the method of
+compiling code for different execution spaces and the
+dispatch of kernels to instances is abstracted by the Kokkos
+framework allowed application programmers to be free from 
+written algorithms in hardware specific languages or
+requiring the programmer to understand the restrictions
+required for parallel execution in the execution space.
 
-\subsection{Analogy with operating system processes}\label{SS:Model:Spaces:Analogies}
+\subsection{Kokkos Memory Spaces}
 
-Here is an analogy: Many operating systems have ``processes.''
-A process is like an execution space, in that code may execute in one or more concurrent threads.
-Those threads share access to a common stack and heap, which comprise the process' ``memory space.''
-Two different processes may not access each other's memory spaces by default.
-However, some operating systems have a ``shared memory'' mechanism.\footnote{See e.g., the POSIX \lstinline!shm_open! and related functions.}
-This lets different processes share access to a specific region of memory,
-which in Kokkos terms is like a ``memory space,'' separate from each process' normal memory space.
-Some operating systems also let you open a file,
-and then ``memory map'' that file into a contiguous memory address range.\footnote{See e.g., the POSIX \lstinline!mmap! function.}
-This makes the file behave like yet another memory space.
-Memory-mapped files may have very different performance characteristics than the usual memory,
-even though programmers access both ``memory spaces'' through the same interface.
-Whether or not a process may access a file depends on both the process and the file.
+The multiple types of memory which will become available in future
+computing nodes are abstracted by Kokkos through {\em memory
+spaces}. Each memory space provides a finite storage capacity
+at which data structures can be allocated and accessed. In
+order to provide portable allocations and performant access,
+Kokkos requires data to be allocated as a $k$-dimensioned array,
+where $k$ must be greater than equal to zero (a zero array being
+a scalar). Each dimension of the array can be either fixed in
+size at compile time or dynamically sized with size resolution
+performed during execution.
 
-% Kokkos' abstract machine model may contain $N$ types of execution spaces
-% and $M$ types of memory spaces.
-% It is possible that $N \neq M$.
+\subsubsection{Instances of Kokkos Memory Spaces}
+
+In much the same way execution spaces have specific instaniations through
+the availablilty of an {\em instance} so do memory spaces. An instance
+of a memory space provides a concrete method for the
+application programmer to request data storage allocatons. Returning
+to the examples provided for execution spaces, the multi-core
+processor may have multiple memory spaces available including
+on-package memory, slower DRAM and additional a set of non-volatile
+memories. The GPU may also provide an additional memory space
+through its local on-package memory. The programmer is free
+to decide where each data structure may be allocated by requesting
+these from the specific instance associated with that memory space.
+Kokkos provides the appropriate abstraction of the allocation
+routines and any associated data management operations including
+releasing the memory and returning it for future use, as well as
+copy operations.
+
 
 \section{Thread teams}\label{S:Model:Teams}
 
