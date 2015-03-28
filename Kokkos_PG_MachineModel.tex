@@ -127,6 +127,27 @@ routines and any associated data management operations including
 releasing the memory and returning it for future use, as well as
 copy operations.
 
+\subsubsection{Memory Consistency in Kokkos}
+
+Memory consistency models are a complex topic in and of themselves
+and usually rely on complex operations associated with hardware
+caches (for more information see reference~\cite{handp_hardware}. 
+Kokkos itself does not {\em require} caches to be present
+in hardware and so assumes an extremely weak memory consistency
+model. In this model, the programmer should not assume any
+specific ordering of memory operations being isused by a
+kernel. This has the potential to create race conditions between
+memory operations if these are not appropriately protected. In
+order to provide a guaranteed that memory are completed, Kokkos
+provides a {\em fence} operation which forces the compute 
+engine to complete all outstanding memory operations before
+any new ones can be issued. With appropriate use of fences,
+programmers are thereby able to ensure that guarantees can
+be made as to when data will {\em definitely} have been 
+written to memory.
+
+\subsubsection{Atomic accesses to Memory in Kokkos}
+
 
 \section{Thread teams}\label{S:Model:Teams}
 
