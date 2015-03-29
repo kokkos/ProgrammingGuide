@@ -1,22 +1,21 @@
-\chapter{Machine model}
+\chapter{Machine Model}
 \label{C:Model}
 
-After reading this chapter, you will understand the abstract model of
-a shared-memory parallel computer which underlies Kokkos.  
-Respecting the abstract machine model ensures performance portability.
-The model has two components:
+After reading this chapter you will understand the abstract model
+of a parallel computing node which underlies the design choices
+and structure of the Kokkos framework. The machine model ensures
+the applications written using Kokkos will have portability across
+architectures while being performant on a range of hardware.\\
+\\
+\noindent
+The machine model has two important components:
 \begin{itemize}
-\item \emph{Memory spaces}, in which data live
+\item \emph{Memory spaces}, in which data structures can be allocated
 \item \emph{Execution spaces}, which execute parallel operations using
-  data in one or more memory spaces
+  data from one or more memory spaces
 \end{itemize}
-All code that uses Kokkos involves relations between memory and execution spaces.
-% A given execution space may or may not be able to access data in a
-% given memory space.  Users can ask Kokkos if it can.  Users may also
-% copy data between any two different memory spaces by using
-% \lstinline!deep_copy!.
 
-\section{Motivation}\label{S:Model:Motivations}
+\section{Motivations}\label{S:Model:Motivations}
 
 Kokkos is comprised of two orthogonal aspects. The first of these is 
 an underlying {\em abstract machine model} which describes fundamental
