@@ -12,6 +12,7 @@ TEXFILES=\
 	Kokkos_PG_Initialization.tex \
 	Kokkos_PG_Subviews.tex \
 	Kokkos_PG_Introduction.tex \
+	Kokkos_PG_Ack.tex \
 	Kokkos_PG.tex \
 	Kokkos_PG.bib
 
