@@ -34,7 +34,7 @@ inside a \lstinline|parallel_for| kernel. Indeed there are things which
 are slightly more cumbersome when mixing the models. Assigning 
 one view to another inside a Cuda kernel or an OpenMP parallel 
 region is only possible if the destination view is unmanaged. 
-During dispatch of kernels with parallel for  all Views referenced 
+During dispatch of kernels with \lstinline|parallel_for|  all Views referenced 
 in the functor or lambda are automatically switched into unmanaged 
 mode. This would not happen when simply entering an OpenMP 
 parallel region. 
@@ -105,9 +105,7 @@ in the \lstinline|CudaSpace| may only be accessed from Cuda kernels, and a View
 constructed from memory acquired through a call to \lstinline|new| will typically only 
 be accessible from Execution spaces which can access the \lstinline|HostSpace|.
 
-\subsubsection{Kokkos manages memory}
-
-\paragraph{Raw allocations}
+\subsection{Raw allocations through Kokkos}
 
 A simple way to add support for multiple memory spaces to a legacy app is to 
 use \lstinline|kokkos_malloc|, \lstinline|kokkos_free| and \lstinline|kokkos_realloc|.
@@ -247,7 +245,11 @@ Outside of parallel kernels its semantics are mostly the same as that of \lstinl
 example assignments performs deep copies and resize and push functionality are provided.
 One important difference is that it is valid to assign values to the elements of a const vector.
 
-\subsection{Calling non-Kokkos libraries}
+Inside of parallel sections \lstinline|Kokkos::vector| switches to view semantics. That means
+in particular that assignments are shallow copies. Certain functions will also throw runtime 
+errors when called inside a parallel kernel. This includes resize and push. 
+
+\section{Calling non-Kokkos libraries}
 
 \subsection{Keeping track of data transfers}
 
