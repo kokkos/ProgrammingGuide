@@ -1,4 +1,4 @@
-\chapter{Machine Model}
+\section{Machine Model}
 \label{C:Model}
 
 After reading this chapter you will understand the abstract model
@@ -15,7 +15,7 @@ The machine model has two important components:
   data from one or more memory spaces
 \end{itemize}
 
-\section{Motivations}\label{S:Model:Motivations}
+\subsection{Motivations}\label{S:Model:Motivations}
 
 Kokkos is comprised of two orthogonal aspects. The first of these is 
 an underlying {\em abstract machine model} which describes fundamental
@@ -28,7 +28,7 @@ being used by Kokkos could, in the future, be instantiated in additional
 languages beyond C++ yet the algorithmic specification would remain
 valid.
 
-\subsection{Kokkos Abstract Machine Model}
+\subsubsection{Kokkos Abstract Machine Model}
 
 \begin{figure}
 \begin{center}
@@ -103,7 +103,7 @@ written algorithms in hardware specific languages or
 requiring the programmer to understand the restrictions
 required for parallel execution in the execution space.
 
-\subsection{Kokkos Memory Spaces}
+\subsubsection{Kokkos Memory Spaces}
 
 \begin{figure}
 \begin{center}
@@ -142,7 +142,7 @@ routines and any associated data management operations including
 releasing the memory and returning it for future use, as well as
 copy operations.
 
-\subsubsection{Atomic accesses to Memory in Kokkos}
+\paragraph{Atomic accesses to Memory in Kokkos}
 
 In cases where multiple executing threads attempt to read
 a memory address, complete a computation on the item and
@@ -174,7 +174,7 @@ which do not support atomic access will result in
 a compile time error.
 
 
-\subsubsection{Memory Consistency in Kokkos}
+\paragraph{Memory Consistency in Kokkos}
 
 Memory consistency models are a complex topic in and of themselves
 and usually rely on complex operations associated with hardware
@@ -196,7 +196,7 @@ written to memory.
 
 
 
-\section{Thread teams}\label{S:Model:Teams}
+\subsection{Thread teams}\label{S:Model:Teams}
 
 Kokkos supports multiple levels of parallelism.
 In particular, it groups threads into \emph{teams}.
@@ -238,7 +238,7 @@ This also reflects the common experience that rewriting a code for more restrict
 then porting the code \emph{back} to conventional hardware,
 tends to improve performance relative to an unoptimized code.
 
-\section{Program execution}\label{S:Model:Exec}
+\subsection{Program execution}\label{S:Model:Exec}
 
 It is tempting to try to define formally what it means for a processor to execute code.
 None of us authors have a background in logic or what computer scientists call ``formal methods,''
@@ -277,7 +277,7 @@ see Section \ref{SS:Model:Exec:ThreadSafety}.
 Kokkos' developers are also working on a task parallelism model
 that will work with Kokkos' existing data-parallel constructs.
 
-\subsection{Reproducible reductions and scans}\label{SS:Model:Exec:Repro}
+\paragraph{Reproducible reductions and scans}\label{SS:Model:Exec:Repro}
 
 Kokkos promises \emph{nothing} about the order in which the iterations of a parallel loop occur.
 However, it \emph{does} promise that if you execute the same parallel reduction or scan,
@@ -285,7 +285,7 @@ using the same hardware resources and run-time settings,
 then you will get the same results each time you run the operation.
 ``Same results'' even means ``with respect to floating-point rounding error.''
 
-\subsection{Asynchronous parallel dispatch}\label{SS:Model:Exec:Async}
+\paragraph{Asynchronous parallel dispatch}\label{SS:Model:Exec:Async}
 
 This concerns the second category of code, that calls Kokkos operations.
 In Kokkos, parallel dispatch executes \emph{asynchronously}.  
@@ -297,7 +297,7 @@ so if you want to measure how long it takes,
 you must first call \lstinline!fence()! on that execution space.
 This forces all functors to complete before \lstinline!fence()! returns.
 
-\subsection{Thread safety?}\label{SS:Model:Exec:ThreadSafety}
+\subsubsection{Thread safety?}\label{SS:Model:Exec:ThreadSafety}
 
 Users may wonder about ``thread safety,'' that is,
 whether multiple operating system threads may safely call into Kokkos concurrently.

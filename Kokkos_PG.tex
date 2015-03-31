@@ -1,6 +1,26 @@
-\documentclass[a4paper,11pt]{book}
-\usepackage[utf8x]{inputenc}
+%
+% $Id: SANDExampleArticleNotstrict.tex,v 1.26 2009/05/01 20:59:19 rolf Exp $
+%
+% This is an example LaTeX file which uses the SANDreport class file.
+% It shows how a SAND report should be formatted, what sections and
+% elements it should contain, and how to use the SANDreport class.
+% It uses the LaTeX article class, but not the strict option.
+% It uses jpeg logos and files to show how pdflatex can be used
+%
+% Get the latest version of the class file and more at
+%    http://www.cs.sandia.gov/~rolf/SANDreport
+%
+% This file and the SANDreport.cls file are based on information
+% contained in "Guide to Preparing {SAND} Reports", Sand98-0730, edited
+% by Tamara K. Locke, and the newer "Guide to Preparing SAND Reports and
+% Other Communication Products", SAND2002-2068P.
+% Please send corrections and suggestions for improvements to
+% Rolf Riesen, Org. 9223, MS 1110, rolf@cs.sandia.gov
+%
+\documentclass[pdf,12pt,relax]{SANDreport}
 
+\usepackage{pdfpages}
+\usepackage[utf8x]{inputenc}
 \usepackage{graphicx}
 
 %% or use the epsfig package if you prefer to use the old commands
@@ -56,22 +76,50 @@
 %\cortext[authorcor]{Corresponding author}
 %\address{Sandia National Laboratories, PO Box 5800 / MS 1318, Albuquerque NM, 87185}
 
-\addtolength{\oddsidemargin}{-.4in}
-\addtolength{\evensidemargin}{-.4in}
-\addtolength{\textwidth}{0.8in}
+% ---------------------------------------------------------------------------- %
+% Set some things we need for SAND reports. These are mandatory
+%
+\SANDnum{SAND2015-xxxx}
+\SANDprintDate{September, 2015}
+\SANDauthor{H. Carter Edwards, Mark Hoemmen, and Christian R. Trott}
+% ---------------------------------------------------------------------------- %
 
-\addtolength{\topmargin}{-.875in}
-\addtolength{\textheight}{1.in}
+%\addtolength{\oddsidemargin}{-.4in}
+%\addtolength{\evensidemargin}{-.4in}
+%\addtolength{\textwidth}{0.8in}
+%
+%\addtolength{\topmargin}{-.875in}
+%\addtolength{\textheight}{1.in}
+% ---------------------------------------------------------------------------- %
 
 \begin{document}
 \maketitle
+
+% ------------------------------------------------------------------------ %
+% An Abstract is required for SAND reports
+%
+\begin{abstract}
+\end{abstract}
+\clearpage
+% ------------------------------------------------------------------------ %
+\section*{Acknowledgements}
+
+Sandia National Laboratories is a multi-program laboratory managed and operated by Sandia Corporation, a wholly owned subsidiary of Lockheed Martin Corporation, for the U.S. Department of Energy's National Nuclear Security Administration under contract DE-AC04-94AL85000.
+
+\cleardoublepage
+% ------------------------------------------------------------------------ %
+
 \setcounter{tocdepth}{2}
 \tableofcontents
+\listoffigures
+\listoftables
 
-\input{Kokkos_PG_Ack.tex}
+\SANDmain
+% ------------------------------------------------------------------------ %
+
 \input{Kokkos_PG_Introduction.tex}
 \input{Kokkos_PG_MachineModel.tex}
-\input{Kokkos_PG_ProgrammingModel.tex}
+\input{Kokkos_PG_ProgrammingModel.tex} \clearpage
 \input{Kokkos_PG_Compilation.tex}
 \input{Kokkos_PG_Initialization.tex}
 \input{Kokkos_PG_Views.tex}
@@ -80,7 +128,12 @@
 \input{Kokkos_PG_Subviews.tex}
 \input{Kokkos_PG_LegacyCodeIntegration.tex}
 
+% ------------------------------------------------------------------------ %
+
+\clearpage
 \bibliographystyle{plain}
 \bibliography{Kokkos_PG}
+
+\include{SANDDistribution}
 
 \end{document}

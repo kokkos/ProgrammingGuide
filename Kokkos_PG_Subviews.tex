@@ -1,4 +1,4 @@
-\chapter{Subviews}\label{C:Subviews}
+\section{Subviews}\label{C:Subviews}
 
 After reading this chapter, you should understand the following:
 \begin{itemize}
@@ -10,7 +10,7 @@ After reading this chapter, you should understand the following:
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{A subview is a slice of a View}\label{S:Subviews:Slice}
+\subsection{A subview is a slice of a View}\label{S:Subviews:Slice}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 In Kokkos, a \emph{subview} is a slice of a View.  A \emph{slice} of a
@@ -55,7 +55,7 @@ of indices other than contiguous ranges.  These may include
 \}$, or even arbitrary sets of indices.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{How to take a subview}\label{S:Subviews:How}
+\subsection{How to take a subview}\label{S:Subviews:How}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 To take a subview of a View, use the \texttt{Kokkos::subview}
@@ -89,7 +89,7 @@ subview is also a View.  This means that you may take a subview of a
 subview.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{C++11 type deduction}\label{SS:Subviews:How:auto}
+\subsubsection{C++11 type deduction}\label{SS:Subviews:How:auto}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Note the use of the C++11 keyword \texttt{auto} in the above example.
@@ -105,7 +105,7 @@ compile-time error.  The best way to avoid this is to use the C++11
 you.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Dimension of a subview}\label{SS:Subviews:How:dim}
+\subsubsection{Dimension of a subview}\label{SS:Subviews:How:dim}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Suppose that a View has $k$ dimensions.  Then, when calling
@@ -114,7 +114,7 @@ argument that is a single index -- that is, not a pair or
 \lstinline!ALL()! -- reduces the dimension of the resulting View by 1.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Degenerate Views}\label{SS:Subviews:How:degen}
+\subsubsection{Degenerate Views}\label{SS:Subviews:How:degen}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Given a View with $k$ dimensions, we call that View \emph{degenerate}

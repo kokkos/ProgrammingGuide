@@ -1,11 +1,11 @@
 
-\chapter{Programming Model}
+\section{Programming Model}
 
 The programming model Kokkos is characterized by 6 core abstractions: Execution Spaces, Execution Patterns, Execution Policies, Memory Spaces, Memory Layout and Memory Traits. 
 These abstraction concepts allow the formulation of generic algorithms and data structures which can then be mapped to different types of architectures. 
 Effectively they allow for compile time transformation of algorithms to allow for adaptions of varying degrees of hardware parallelism as well as of the memory hierarchy. 
 
-\section{Execution Spaces}
+\subsection{Execution Spaces}
 
 An Execution Space is the place {\it Where} code can actually be executed. 
 For example on current Hybrid GPU / CPU systems there are two types of execution spaces: the GPU cores and the CPU cores. 
@@ -13,7 +13,7 @@ In the future this could include Processing in Memory (PIM) modules or different
 In principle this can also be used to introduce remote memory spaces, e.g. the capability of sending work to a different node.
 Execution Spaces thus give an application developer the means to target different parts of a heterogenous hardware architecture.
 
-\section{Execution Patterns}
+\subsection{Execution Patterns}
 
 Execution Patterns are the fundamental parallel algorithms in which an application has to be expressed.
 Examples are \lstinline|parallel_for|: execute a function in undeterminded order a specified amount of times.,
@@ -24,11 +24,11 @@ Expressing an application in these patterns allows the underlying implementation
 For example all \lstinline|parallel_***| patterns allow unspecified execution order, and only promise deterministic results of the reductions themselves.
 This enables different mapping patterns on different hardware such as assignment of iterations to threads or vector lanes. 
 
-\section{Execution Policies}
+\subsection{Execution Policies}
 
 An Execution Policy determines together with an Execution Pattern {\it How} a function is executed.
 
-\section{Memory Spaces}
+\subsection{Memory Spaces}
 
 Memory Spaces are the places {\it Where} data resides.
 They specify physical location of data as well as certain access characteristics. 
@@ -37,13 +37,13 @@ Different logical memory spaces allow for concepts such as UVM memory in the CUD
 Memory Spaces also can be used to express remote memory locations.
 Furthermore they encapsulate functionality such as consistency control and persistence scopes.
 
-\section{Memory Layout}
+\subsection{Memory Layout}
 
 Layouts express the mapping from logical (or algorithmical) indicies to address offset for a data allocation. 
 By adopting appropriate layouts for memort structures an application can optimise data access patterns in a given algorithm.
 If an implementation provides polymorphic layouts (i.e. a data structure can be instantiated at compile or runtime with different layouts) an architecture dependent optimisation can be performed.
 
-\section{Memory Traits}
+\subsection{Memory Traits}
 
 Memory Traits specify how a data structure is accessed in an algorithm. 
 Traits express usage scenarios such as atomic access, random access and streaming loads or stores.
