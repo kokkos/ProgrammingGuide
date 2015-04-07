@@ -249,8 +249,48 @@ Inside of parallel sections \lstinline|Kokkos::vector| switches to view semantic
 in particular that assignments are shallow copies. Certain functions will also throw runtime 
 errors when called inside a parallel kernel. This includes resize and push. 
 
+\begin{lstlisting}
+// Create a vector of 1000 double elements
+Kokkos::vector<double> v(1000);
+// Create another vector as a copy of v; This allocates another 1000 doubles
+Kokkos::vector<double> x = v; 
+
+parallel_for(1000, KOKKOS_LAMBDA (const int& i) {
+   // Create a view of x; m and x will reference the same data.
+   Kokkos::vector<double> m = x; 
+   x[i] = 2*i+1;
+   v[i] = m[i] - 1;
+});
+
+// Now x contains the first 1000 uneven numbers
+// v contains the first 1000 even numbers
+\end{lstlisting}
+
 \section{Calling non-Kokkos libraries}
 
-\subsection{Keeping track of data transfers}
+There are no restrictions on calling non-Kokkos libraries outside of parallel kernels. 
+However due to the polymorphic layouts of Kokkos views it is often required to test
+layouts for compatibility with third party libraries. The usual Blas interface for example,
+expects matrixes to be laid out in column major format (i.e. LayoutLeft in Kokkos). 
+Furthermore it is necessary to test that the library can access the memory space 
+of the view.
 
- 
+\begin{lstlisting}
+template<class Scalar, class DeviceType>
+Scalar dot(View<const Scalar* , DeviceType> a, View<const Scalar*, DeviceType> b) {
+// Check for Cuda memory and call cublas if true
+#ifdef KOKKOS_HAVE_CUDA
+  if(Impl::is_same<typename DeviceType::memory_space,CudaSpace> ::value ||
+     Impl::is_same<typename DeviceType::memory_space,CudaUVMSpace> ::value) {
+    return call_cublas_dot(a.ptr_on_device(),b.ptr_on_device(),a.dimension_0() );
+  }
+#endif
+
+// Call CBlas on the host otherwise
+  if(Impl::is_same<typename DeviceType::memory_space,HostSpace> ::value) {
+    return call_cblas_dot(a.ptr_on_device(),b.ptr_on_device(),a.dimension_0() );
+  }
+}
+\end{lstlisting}
+
+Note the \lstinline|Impl::is_same| construct can be replaced
