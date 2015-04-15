@@ -1,4 +1,4 @@
-\section{Hierarchical Parallelism}\label{C:Hierarchical}
+\chapter{Hierarchical Parallelism}\label{C:Hierarchical}
 
 This chapter explains how to use Kokkos to exploit multiple levels of shared-memory parallelism.
 These levels include thread teams, threads within a team, and vector lanes.
@@ -8,7 +8,7 @@ The syntax differs only by the execution policy,
 which is the first argument to the \verb!parallel_*! operation.
 Kokkos also exposes a ``scratch pad'' memory which all threads within a team may share.
 
-\subsection{Motivation}\label{S:Hierarchical:Motivation}
+\section{Motivation}\label{S:Hierarchical:Motivation}
 
 Node architectures on modern high-performance computers are characterized by ever more \emph{hierarchical parallelism}. 
 A level in the hierachy is determined by the hardware resources which are shared between compute units at that level. 
@@ -37,7 +37,7 @@ This enables adaptive kernels which map work to different hardware resources dep
 While Kokkos provides defaults and suggestions, the optimal mapping can be algorithm dependent. 
 Hierarchical parallelism is accessible through execution policies.
 
-\subsection{Thread teams}\label{S:Hierarchical:Teams}
+\section{Thread teams}\label{S:Hierarchical:Teams}
 
 Kokkos' most basic hierarchical parallelism concept is a thread team.
 A \emph{thread team} is a collection of threads which can synchronize,
@@ -55,7 +55,7 @@ and they must run to completion before new ones are executed.
 Consequently it is not valid to use inter thread-team synchronization mechanisms
 such as waits for events initiated by other thread teams. 
 
-\subsubsection{Creating a Policy instance}\label{SS:Hierarchical:Teams:Policy}
+\subsection{Creating a Policy instance}\label{SS:Hierarchical:Teams:Policy}
 
 Kokkos exposes use of thread teams with the \lstinline!Kokkos::TeamPolicy! execution policy.
 To use thread teams you need to create a \lstinline|Kokkos::TeamPolicy| instance.
@@ -78,7 +78,7 @@ Kokkos::TeamPolicy<SomeTag, ExecutionSpace>
         policy( league_size, team_size ); 
 \end{lstlisting}
  
-\subsubsection{Basic kernels}\label{SS:Hierarchical:Teams:Kernels}
+\subsection{Basic kernels}\label{SS:Hierarchical:Teams:Kernels}
 
 The team policy's \lstinline!member_type! provides the necessary functionality to use teams within a parallel kernel.
 It allows access to thread identifiers such as the league rank and size, and the team rank and size.
@@ -106,7 +106,7 @@ The name ``\lstinline!TeamPolicy!'' makes it explicit that a kernel
 using it constitutes a parallel region with respect to the team.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Team scratch pad memory}\label{S:Hierarchical:Scratch}
+\section{Team scratch pad memory}\label{S:Hierarchical:Scratch}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Each Kokkos team has a ``scratch pad.''
@@ -189,7 +189,7 @@ Kokkos::parallel_for(Kokkos::TeamPolicy<>(league_size,team_size),
 \end{lstlisting}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Nested parallelism}\label{S:Hierarchical:Nested}
+\section{Nested parallelism}\label{S:Hierarchical:Nested}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Instead of writing code which explicitly uses league and team rank indices, one can use nested parallelism to implement hierarchical algorithms.
@@ -202,7 +202,7 @@ You may nest them and use them in conjunction with code that is aware of the lea
 The different layers are accessible via special execution policies:
 \lstinline|TeamThreadLoop| and \lstinline|ThreadVectorLoop|. 
 
-\subsubsection{Team and vector loops}\label{SS:Hierarchical:Nested:Loops}
+\subsection{Team and vector loops}\label{SS:Hierarchical:Nested:Loops}
 
 The first nested level of parallel loops splits an index range over the threads of a team. 
 This motivates the policy name \lstinline|TeamThreadRange|, 
@@ -267,7 +267,7 @@ parallel_for (TeamPolicy<> (league_size, team_size),
 
 The third pattern is \lstinline|parallel_scan| which can be used to perform prefix scans.
 
-\subsubsection{Restrict execution with \lstinline|single|}
+\subsection{Restricting execution to a single executor}
 
 As stated above, a kernel is a parallel region with respect to threads (and vector lanes) within a team.
 This means that global memory accesses outside of the respective nested levels potentially have to be protected against repetitive execution. 

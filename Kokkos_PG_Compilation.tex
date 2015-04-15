@@ -1,5 +1,5 @@
 
-\section{Compiling}\label{C:build}
+\chapter{Compiling}\label{C:build}
 
 This chapter explains how to compile Kokkos, and how to link your
 application against Kokkos.  Kokkos supports two build systems:
@@ -13,7 +13,7 @@ application build process, while explicitly linking against a
 pre-compiled Kokkos library in Trilinos.  We also include specific
 advice for building for NVIDIA GPUs, and for Intel Xeon Phi.
 
-\subsection{General Information}\label{S:build:gen}
+\section{General Information}\label{S:build:gen}
 
 Kokkos consists mainly of header files. 
 Only a few functions have to be compiled into object files outside of the application's source code.
@@ -27,7 +27,7 @@ A list of macros can be found in Table \ref{TBL:CompileMacros}.
 \caption{Table of configuration Macros}
 \label{TBL:CompileMacros}
 \begin{small}
-\begin{tabular}[t]{p{0.25\textwidth}p{0.3\textwidth}p{0.42\textwidth}}
+\begin{tabular}[t]{p{0.18\textwidth}p{0.3\textwidth}p{0.42\textwidth}}
 \hline\hline
 Macro & Effect & Comment \\
 \hline
@@ -42,7 +42,7 @@ Macro & Effect & Comment \\
 \end{small}
 \end{table}
 
-\subsection{Using Kokkos' Makefile system}\label{S:build:make}
+\section{Using Kokkos' Makefile system}\label{S:build:make}
 
 The base of the build system is the Makefile.kokkos, which is designed to be included by application Makefiles.
 It contains logic to (re)generate the KokkosCore\_config.h file if necessary, build the Kokkos library, and provide updated compiler and linker flags.
@@ -73,10 +73,6 @@ Variable & Description \\
    CUDA\_PATH (IN): & Path to the Cuda toolkit root directory.\\
 
 \hline
-   HWLOC\_PATH (IN): & Path to the hardware locality library. \\
-
-
-\hline
    KOKKOS\_DEVICES (IN): & What Execution and Memory Spaces should be enabled. \\
       \hspace{0.5cm}Options: & OpenMP,Serial,Pthreads,Cuda \\
       \hspace{0.5cm}Default: & OpenMP \\
@@ -87,6 +83,14 @@ Variable & Description \\
                Maxwell50,ARMv8,BGQ,Power7,Power8 \\
       \hspace{0.5cm}Default: & None -- this means no particular architecture flags
                are set. \\
+
+\hline
+   KOKKOS\_USE\_TPLS (IN): & Enable optional third party libraries. \\
+      \hspace{0.5cm}Options: & hwloc,librt \\
+      \hspace{0.5cm}Default: & \\
+
+\hline
+   HWLOC\_PATH (IN): & Path to the hardware locality library if enabled. \\
 
 \hline
     KOKKOS\_DEBUG (IN): & Enable debugging. \\
@@ -150,7 +154,7 @@ Variable & Description \\
 
 More example application Makefiles can be found in the tutorial examples under \verb!kokkos/example/tutorial!.
 
-\subsection{Using Trilinos' CMake build system}\label{S:build:Trilinos}
+\section{Using Trilinos' CMake build system}\label{S:build:Trilinos}
 
 The Trilinos project (see \url{trilinos.org}) is an effort to develop
 algorithms and enabling technologies within an object-oriented
@@ -176,9 +180,9 @@ We refer readers to Trilinos' documentation for details.  Also, the
 \texttt{kokkos/config} directory includes examples of Trilinos
 configuration scripts.
  
-\subsection{Building for CUDA}\label{S:build:CUDA}
+\section{Building for CUDA}\label{S:build:CUDA}
 
-Any Kokkos application compiled for CUDA embeds CUDA code via template metaprogramming.
+Any Kokkos application compiled for CUDA embeds CUDA code via template meta-programming.
 Thus, the whole application must be built with a CUDA-capable compiler.
 (At the moment, the only such compiler is NVIDIA's NVCC.)
 More precisely, every compilation unit containing a Kokkos kernel or a function called from a Kokkos kernel has to be compiled with a CUDA-capable compiler. 
@@ -200,6 +204,6 @@ To use the \lstinline|nvcc_wrapper| in conjunction with MPI wrappers, simply ove
 For example, you can reset OpenMPI's C++ compiler by setting the \lstinline|OMPI_CXX| environment variable.
 Make sure that \lstinline|nvcc_wrapper| calls the host compiler with which the MPI library was compiled.
 
-\subsection{Building for Intel Xeon Phi}\label{S:build:Phi}
+\section{Building for Intel Xeon Phi}\label{S:build:Phi}
 
 TODO

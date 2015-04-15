@@ -17,20 +17,11 @@
 % Please send corrections and suggestions for improvements to
 % Rolf Riesen, Org. 9223, MS 1110, rolf@cs.sandia.gov
 %
-\documentclass[pdf,12pt,relax]{SANDreport}
-
-\usepackage{pdfpages}
+%\documentclass[pdf,12pt,relax]{SANDreport}
+\documentclass[a4paper,11pt]{book}
 \usepackage[utf8x]{inputenc}
-\usepackage{graphicx}
 
-\usepackage{hyperref}
-\hypersetup{
-    colorlinks,
-    citecolor=black,
-    filecolor=black,
-    linkcolor=black,
-    urlcolor=black
-}
+\usepackage{graphicx}
 
 %% or use the epsfig package if you prefer to use the old commands
 %% \usepackage{epsfig}
@@ -47,15 +38,34 @@
 
 %% \usepackage{placeins}
 
-\usepackage{url}
 \usepackage{listings}
 \usepackage{subfigure}
 \usepackage{courier}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+\usepackage{url}
+
 \usepackage{color}
+
 \definecolor{lightlightgray}{gray}{0.97}
 \definecolor{lightlightgreen}{rgb}{0.8,1,0.8}
 \definecolor{darkblue}{rgb}{0,0,0.8}
 \definecolor{darkgreen}{rgb}{0,0.5,0}
+\definecolor{LightSkyBlue}{rgb}{0.8,1,0.8}
+\definecolor{MidnightBlue}{rgb}{0.8,1,0.8}
+\definecolor{SandiaGray}{RGB}{130, 120, 111}\definecolor{SandiaBlue}{RGB}{0, 50, 90}
+\definecolor{SandiaLightBlue}{RGB}{0,150,180}
+\definecolor{SandiaLightLightBlue}{RGB}{0,200,220}
+\definecolor{SandiaRed}{RGB}{130, 36, 51}
 \lstset{language=C++,
            %%frame=single,
            basicstyle=\ttfamily\small,
@@ -66,6 +76,54 @@
            commentstyle=\color{darkgreen}
            }
 
+\usepackage{kpfonts}
+\usepackage[explicit]{titlesec}
+\newcommand*\chapterlabel{}
+\titleformat{\chapter}
+  {\gdef\chapterlabel{}
+   \normalfont\sffamily\Huge\bfseries\scshape}
+  {\gdef\chapterlabel{\thechapter\ }}{0pt}
+  {\begin{tikzpicture}[remember picture,overlay]
+    \node[yshift=-2cm] at (current page.north west)
+      {\begin{tikzpicture}[remember picture, overlay]
+        \draw[fill=SandiaGray,color=SandiaGray] (0,0) rectangle
+          (\paperwidth,2cm);
+        \node[anchor=east,xshift=.9\paperwidth,rectangle,
+              rounded corners=20pt,inner sep=11pt,
+              fill=SandiaBlue,color=SandiaBlue]
+              {\color{white}\chapterlabel#1};
+       \end{tikzpicture}
+      };
+   \end{tikzpicture}
+  }
+\titlespacing*{\chapter}{0pt}{50pt}{-60pt}
+
+
+%\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[CE,CO]{\leftmark}
+%\fancyhead[CE]{\hspace{40cm}\thechapter. \chaptername}
+%\fancyhead[LO]{\hspace{12.68cm}\thechapter. \chaptername}
+\fancyfoot[RE,LO]{\leftmark}
+\fancyfoot[CE,CO]{\vspace{0.2cm}\color{white}\thepage}
+\renewcommand{\headrulewidth}{10pt}
+\renewcommand{\footrulewidth}{65pt}
+\fancyheadoffset{\textwidth}
+\fancyfootoffset{\textwidth}
+\headsep = 1.5cm
+\footskip = 40pt
+
+\makeatletter
+\def\headrule{{\color{SandiaGray}\if@fancyplain\let\headrulewidth\plainheadrulewidth\fi
+\hrule\@height\headrulewidth\@width\headwidth
+\vskip-\headrulewidth}}
+\makeatother
+
+\makeatletter
+\def\footrule{{\color{SandiaBlue}\if@fancyplain\let\footrulewidth\plainheadrulewidth\fi
+\hrule\@height\footrulewidth\@width\headwidth
+\vskip-\footrulewidth}}
+\makeatother
 \title{Kokkos: the Programming Guide}
 
 %% use optional labels to link authors explicitly to addresses:
@@ -88,47 +146,146 @@
 % ---------------------------------------------------------------------------- %
 % Set some things we need for SAND reports. These are mandatory
 %
-\SANDnum{SAND2015-xxxx}
-\SANDprintDate{September, 2015}
-\SANDauthor{H. Carter Edwards, Mark Hoemmen, and Christian R. Trott}
+%\SANDnum{SAND2015-xxxx}
+%\SANDprintDate{September, 2015}
+%\SANDauthor{H. Carter Edwards, Mark Hoemmen, and Christian R. Trott}
 % ---------------------------------------------------------------------------- %
+\addtolength{\oddsidemargin}{-.4in}
+\addtolength{\evensidemargin}{-.4in}
+\addtolength{\textwidth}{0.8in}
 
-%\addtolength{\oddsidemargin}{-.4in}
-%\addtolength{\evensidemargin}{-.4in}
-%\addtolength{\textwidth}{0.8in}
-%
-%\addtolength{\topmargin}{-.875in}
-%\addtolength{\textheight}{1.in}
-% ---------------------------------------------------------------------------- %
+\addtolength{\topmargin}{-.875in}
+\addtolength{\textheight}{1.in}
+
 
 \begin{document}
-\maketitle
 
 % ------------------------------------------------------------------------ %
 % An Abstract is required for SAND reports
 %
-\begin{abstract}
-\end{abstract}
-\clearpage
+%\begin{abstract}
+%\end{abstract}
+%\clearpage
 % ------------------------------------------------------------------------ %
-\section*{Acknowledgements}
+%\section*{Acknowledgements}
 
-Sandia National Laboratories is a multi-program laboratory managed and operated by Sandia Corporation, a wholly owned subsidiary of Lockheed Martin Corporation, for the U.S. Department of Energy's National Nuclear Security Administration under contract DE-AC04-94AL85000.
+%Sandia National Laboratories is a multi-program laboratory managed and operated by Sandia Corporation, a wholly owned subsidiary of Lockheed Martin Corporation, for the U.S. Department of Energy's National Nuclear Security Administration under contract DE-AC04-94AL85000.
 
-\cleardoublepage
+%\cleardoublepage
 % ------------------------------------------------------------------------ %
 
-\setcounter{tocdepth}{2}
+%\setcounter{tocdepth}{2}
+%\tableofcontents
+%\listoffigures
+%\listoftables
+
+%\SANDmain
+
+\pagestyle{fancy}
+\begin{titlepage}
+\vspace{5cm}
+\hspace{2cm}
+%\begin{minipage}[h]{0.8\textwidth}
+  {\begin{tikzpicture}[remember picture,overlay]
+    \node[yshift=-2.5cm] at (current page.north west)
+      {\begin{tikzpicture}[remember picture, overlay]
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (0,-8cm) rectangle (8cm,5.5cm);
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (0,-6cm) rectangle (6cm,3.5cm);
+          \draw[fill=SandiaBlue,color=SandiaBlue] (0,-4cm) rectangle (4cm,1.5cm);          
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (4cm,-4cm) circle [radius=4cm];
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (6cm,-6cm) circle [radius=6cm];
+          \draw[fill=white,color=white] (8cm,-8cm) circle [radius=8cm];
+          \draw[fill=SandiaGray,color=SandiaGray] (0,3.5cm) rectangle (\paperwidth,0.5cm);
+          \draw[fill=SandiaBlue,color=SandiaBlue] (0,0) rectangle (\paperwidth,2.0cm);
+%          \draw[fill=SandiaGray,color=SandiaGray] (0,3.5cm) rectangle (\paperwidth,0.5cm);
+       \end{tikzpicture}
+      };
+
+      \node[yshift=0cm] at (current page.south east)
+      {\begin{tikzpicture}[remember picture, overlay]
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (-8cm,11.5cm) rectangle (8cm,5.5cm);
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (-6cm,9.5cm) rectangle (6cm,3.5cm);
+          \draw[fill=SandiaBlue,color=SandiaBlue] (0,7.5cm) rectangle (-4cm,1.5cm);          
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (-4cm,7.5cm) circle [radius=4cm];
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (-6cm,9.3cm) circle [radius=6cm];
+          \draw[fill=white,color=white] (-8cm,11.5cm) circle [radius=8cm];
+        \draw[fill=SandiaBlue,color=SandiaBlue] (-\paperwidth,0.5cm) rectangle
+          (\paperwidth,3.5cm);
+        \draw[fill=SandiaGray,color=SandiaGray] (-\paperwidth,0) rectangle
+          (\paperwidth,0.5cm);
+       \end{tikzpicture}
+      };
+                              
+    \node[yshift=-.25\paperheight] at (current page.north west)
+      {\begin{tikzpicture}[remember picture, overlay]
+      
+          \node[anchor=east,xshift=.4\paperwidth,rectangle,
+              yshift=-.1\paperheight,
+              rounded corners=20pt,inner sep=11pt,
+              fill=SandiaBlue]
+              {\color{white} \Huge Kokkos};
+              
+        \node[anchor=east,xshift=.8\paperwidth,rectangle,
+              yshift=-.2\paperheight,
+              rounded corners=20pt,inner sep=11pt,
+              fill=SandiaBlue]
+              {\color{white} \Huge The Programming Guide};
+      
+        \node[anchor=east,xshift=.8\paperwidth,color=white,rectangle,yshift=-.25\paperheight]
+              {\color{black}Version 0.9 April 2015};
+              
+        %\draw [line width=12, SandiaGray] (0.1\paperwidth,-0.15\paperwidth) -- (0.25\paperwidth, 0.0\paperwidth);        %\draw [line width=12, SandiaGray] (0.9\paperwidth,-0.15\paperwidth) -- (0.75\paperwidth, 0.0\paperwidth);        %\draw [line width=12, SandiaGray] (0.1\paperwidth,-0.27\paperwidth) -- (0.25\paperwidth,-0.42\paperwidth);        %\draw [line width=12, SandiaGray] (0.9\paperwidth,-0.27\paperwidth) -- (0.75\paperwidth,-0.42\paperwidth);
+
+        %\draw [line width=12, SandiaGray] (0.1\paperwidth,-0.27\paperwidth) -- (0.1\paperwidth,-0.15\paperwidth);        %\draw [line width=12, SandiaGray] (0.9\paperwidth,-0.27\paperwidth) -- (0.9\paperwidth,-0.15\paperwidth);
+      
+        %\draw [line width=12, SandiaGray] (0.35\paperwidth, 0.0\paperwidth) -- (0.65\paperwidth,-0.0\paperwidth);        %\draw [line width=12, SandiaGray] (0.35\paperwidth,-0.42\paperwidth) -- (0.65\paperwidth,-0.42\paperwidth);
+      
+      \end{tikzpicture}
+      };
+      
+      \node[xshift=0.25\paperwidth,rectangle, yshift=5cm] at (current page.south west)
+              {\includegraphics[height=0.4in]{figures/SNL_Stacked_Black_Blue.jpg}};
+      \node[xshift=0.1\paperwidth,rectangle, yshift=5cm] at (current page.south west)
+              {\includegraphics[height=0.6in]{figures/DOEbwlogo.pdf}};
+
+
+   \end{tikzpicture}
+   }
+
+
+%\end{minipage}
+
+
+\vfill
+\end{titlepage}
+
+%\chapter*{Acknowledgements}
+
+\noindent
+Sandia National Laboratories is a multi-program laboratory managed and operated by Sandia 
+Corporation, a wholly owned subsidiary of Lockheed Martin Corporation, for the U.S. 
+Department of Energy's National Nuclear Security Administration under contract DE-AC04-94AL85000.
+
+\vspace{4cm}
+\noindent 
+Authors: \newline\newline
+Christian R. Trott (crtrott@sandia.gov)\newline
+Mark Hoemmen (mhoemm@sandia.gov)\newline
+Simon D. Hammond (sdhammo@sandia.gov)\newline
+H. Carter Edwards (hcedwar@sandia.gov)
+
+\vspace{1cm}
+\noindent 
+Version: \newline\newline
+0.9 April 2015
+
+%\maketitle
+%\setcounter{tocdepth}{2}
 \tableofcontents
-\listoffigures
-\listoftables
-
-\SANDmain
-% ------------------------------------------------------------------------ %
 
 \input{Kokkos_PG_Introduction.tex}
 \input{Kokkos_PG_MachineModel.tex}
-\input{Kokkos_PG_ProgrammingModel.tex} \clearpage
+\input{Kokkos_PG_ProgrammingModel.tex}
 \input{Kokkos_PG_Compilation.tex}
 \input{Kokkos_PG_Initialization.tex}
 \input{Kokkos_PG_Views.tex}
@@ -137,12 +294,8 @@ Sandia National Laboratories is a multi-program laboratory managed and operated 
 \input{Kokkos_PG_Subviews.tex}
 \input{Kokkos_PG_LegacyCodeIntegration.tex}
 
-% ------------------------------------------------------------------------ %
-
 \clearpage
 \bibliographystyle{plain}
 \bibliography{Kokkos_PG}
-
-\include{SANDDistribution}
-
+%\include{SANDDistribution}
 \end{document}

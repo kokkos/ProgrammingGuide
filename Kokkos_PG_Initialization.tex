@@ -1,5 +1,5 @@
 
-\section{Initialization}\label{C:init}
+\chapter{Initialization}\label{C:init}
 
 In order to use Kokkos an initialization call is required. 
 That call is responsible for aquiring hardware resources such as threads. 
@@ -11,7 +11,7 @@ Your program must also \emph{finalize} Kokkos when done using it,
 in order to free hardware resources.
 
 
-\subsection{Initialization by command-line arguments}\label{S:init:cmdline}
+\section{Initialization by command-line arguments}\label{S:init:cmdline}
 
 The simplest way to initialize Kokkos is by calling the following function:
 \begin{lstlisting}
@@ -92,7 +92,7 @@ screen output.\\
 \end{small}
 \end{table}
 
-\subsection{Initialization by struct}\label{S:init:struct}
+\section{Initialization by struct}\label{S:init:struct}
 
 Instead of giving \lstinline|Kokkos::initialize()| command-line arguments,
 one may directly pass in initialization parameters, using the following struct:
@@ -128,7 +128,7 @@ args.device_id = 1;
 Kokkos::initialize(args);
 \end{lstlisting}
 
-\subsection{Initializing non-default execution spaces}\label{S:init:specific}
+\section{Initializing non-default execution spaces}\label{S:init:specific}
 
 Instead of calling the generic initialization, one can call initialization for each execution space on its own. 
 If the associated host execution space of an execution space is not identical to the latter, it has to be initialized first.
@@ -149,7 +149,7 @@ This may have a big effect on performance.
 The only exception is the \lstinline!Serial! execution space.
 You may safely initialize \lstinline!Serial! along with another host execution space.
 
-\subsection{Finalization}\label{S:init:finalize}
+\section{Finalization}\label{S:init:finalize}
 
 At the end of each program Kokkos needs to be shut down in order to free resources. 
 Do this by calling \lstinline!Kokkos::finalize()!.

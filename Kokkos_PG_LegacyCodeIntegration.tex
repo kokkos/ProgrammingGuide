@@ -1,4 +1,4 @@
-\section{Interoperability and Legacy Codes}
+\chapter{Interoperability and Legacy Codes}
 
 One goal of Kokkos is to support incremental adoption in legacy 
 applications. This facilitates a step by step conversion allowing
@@ -19,7 +19,7 @@ In all code examples in this chapter, we assume that all classes in
 the \lstinline!Kokkos! namespace have been imported into the working
 namespace.
 
-\subsection{OpenMP, Pthreads and CUDA interoperability}
+\section{OpenMP, Pthreads and CUDA interoperability}
 
 Since the implementation of Kokkos is achieved with a C++ library
 it provides full interoperability with the underlying backend programming
@@ -39,10 +39,10 @@ in the functor or lambda are automatically switched into unmanaged
 mode. This would not happen when simply entering an OpenMP 
 parallel region. 
 
-\subsubsection{Cuda interoperabiltiy}
+\subsection{Cuda interoperabiltiy}
 
-The most important thing to know for Cuda interoperability is that the
-\lstinline|KOKKOS_INLINE_FUNCTION| macro evaluates to 
+The most important thing to know for Cuda interoperability is that the provided macro
+\lstinline|KOKKOS_INLINE_FUNCTION| evaluates to 
 \lstinline|__host__ __device__ inline|. This means that calling a pure
 \lstinline|__device__| function (for example Cuda intrinsics or device 
 functions of libraries) must be protected with the \lstinline|__CUDA_ARCH__|
@@ -80,7 +80,7 @@ vector length (power of two and smaller than 32 for the Cuda execution space)
 guarantee that vector loops are performed by threads which are part of a single 
 warp. 
 
-\subsubsection{OpenMP}
+\subsection{OpenMP}
 
 One restriction on OpenMP interoperability is that it is not valid to increase
 the number of threads via \lstinline|omp_set_num_threads()| after initializing 
@@ -93,7 +93,7 @@ what happens when mixing OpenMP and Kokkos atomics, since those will not
 necessarily map to the the same underlying mechanism. 
 
 
-\subsection{Legacy data structures}
+\section{Legacy data structures}
 
 There are two principal mechanism to facilitate interoperability with legacy data 
 structures: (i) Kokkos allocates data and raw pointers are extracted to create 
@@ -105,7 +105,7 @@ in the \lstinline|CudaSpace| may only be accessed from Cuda kernels, and a View
 constructed from memory acquired through a call to \lstinline|new| will typically only 
 be accessible from Execution spaces which can access the \lstinline|HostSpace|.
 
-\subsection{Raw allocations through Kokkos}
+\section{Raw allocations through Kokkos}
 
 A simple way to add support for multiple memory spaces to a legacy app is to 
 use \lstinline|kokkos_malloc|, \lstinline|kokkos_free| and \lstinline|kokkos_realloc|.
@@ -118,10 +118,12 @@ double* a = (double*) kokkos_malloc<>(100*sizeof(double));
 
 // Allocate an array of 150 int* in the Cuda UVM memory space
 // This allocation is accessible from the host
-int** 2d_array = (int**) kokkos_malloc<CudaUVMSpace>(150*sizeof(int*));
+int** 2d_array = (int**) kokkos_malloc<CudaUVMSpace>
+                         (150*sizeof(int*));
 
 // Fill the pointer array with pointers to data in the Cuda Space
-// Since it is not the UVM space you can access 2d_array[i][j] only inside a Cuda Kernel
+// Since it is not the UVM space you can access 2d_array[i][j] 
+// only inside a Cuda Kernel
 for(int i=0;i<150;i++)
   2d_array[i] = (int*) kokkos_malloc<CudaSpace>(200*sizeof(int));
 \end{lstlisting}
@@ -130,7 +132,7 @@ A common usage scenario of this capability is to allocate all memory in the Cuda
 when compiling for GPUs. This allows all allocations to be accessible from legacy code sections
 as well as from parallel kernels written with Kokkos. 
 
-\subsubsection{External memory management}
+\subsection{External memory management}
 
 When memory is managed externally, for example because Kokkos is used
 in a library which is given pointers to data allocations as input, it can be necessary 
@@ -168,7 +170,8 @@ void MyKokkosFunction(double* a, const double** b, int n, int m) {
   // Get the member_type of the team policy
   typedef TeamPolicy<host_space>::member_type t_team;
   // Run a 2D copy kernel using a TeamPolicy
-  parallel_for(TeamPolicy<host_space>(n,m),KOKKOS_LAMBDA (const t_team& t) {
+  parallel_for(TeamPolicy<host_space>(n,m),
+    KOKKOS_LAMBDA (const t_team& t) {
     const int i = t.team_rank();
     parallel_for(TeamThreadRange(t,m), [&] (const int& j) {
       h_b(i,j) = b[i][j];
@@ -184,22 +187,23 @@ If that data is a multi dimensional view it is important to specify the Layout e
 Furthermore all data must be part of the same allocation.
 
  \begin{lstlisting}
-void MyKokkosFunction(double* a, const double* b, int n, int m) {
+void MyKokkosFunction(int* a, const double* b, int n, int m) {
   // Define the host execution space and the view types
-  typedef View<double*,DefaultHostExecutionSpace, Unmanaged> t_1d_view;
-  typedef View<double**[3],LayoutRight, DefaultHostExecutionSpace, Unmanaged> 
-     t_3d_view;
+  typedef View<int*, DefaultHostExecutionSpace, Unmanaged> t_1d_view;
+  typedef View<double**[3],LayoutRight, DefaultHostExecutionSpace, 
+               Unmanaged> t_3d_view;
   
   // Create a 1D view of the external allocation
   t_1d_view d_a(a,n);
  
   // Create a 3D view of the second external allocation
-  // This assumes that the data had a row major layout (i.e. the third index is stride 1)
+  // This assumes that the data had a row major layout 
+  // (i.e. the third index is stride 1)
   t_3d_view d_b(b,n,m);
 }
 \end{lstlisting}
 
-\subsubsection{Views as the fundamental data owning structure}
+\subsection{Views as the fundamental data owning structure}
 
 An other option is to let Kokkos handle the basic allocations using Views, 
 and then constructing the legacy data structures around them. Again it is
@@ -218,7 +222,7 @@ for(int i=0; i<n; i++)
   a_old[i] = &a(i,0);
 \end{lstlisting}
 
-\subsubsection{std::vector}
+\subsection{std::vector}
 
 One of the most common data objects in C++ codes is \lstinline|std::vector|. 
 Its semantics are unfortunately not compatible with Kokkos requirements 
@@ -240,7 +244,7 @@ locks in order to prevent one thread to deallocate the view while another access
 And last but not least \lstinline|std::vector| is not supported on GPUs and thus would prevent
 portability. 
  
-Kokkos provides a drop in replacement for |std::vector| in the form of \lstinline|Kokkos::vector|.
+Kokkos provides a drop in replacement for \lstinline|std::vector| with \lstinline|Kokkos::vector|.
 Outside of parallel kernels its semantics are mostly the same as that of \lstinline|std::vector|, for
 example assignments performs deep copies and resize and push functionality are provided.
 One important difference is that it is valid to assign values to the elements of a const vector.
@@ -252,7 +256,8 @@ errors when called inside a parallel kernel. This includes resize and push.
 \begin{lstlisting}
 // Create a vector of 1000 double elements
 Kokkos::vector<double> v(1000);
-// Create another vector as a copy of v; This allocates another 1000 doubles
+// Create another vector as a copy of v; 
+// This allocates another 1000 doubles
 Kokkos::vector<double> x = v; 
 
 parallel_for(1000, KOKKOS_LAMBDA (const int& i) {
@@ -276,19 +281,24 @@ Furthermore it is necessary to test that the library can access the memory space
 of the view.
 
 \begin{lstlisting}
-template<class Scalar, class DeviceType>
-Scalar dot(View<const Scalar* , DeviceType> a, View<const Scalar*, DeviceType> b) {
+template<class Scalar, class Device>
+Scalar dot(View<const Scalar* , Device> a, 
+           View<const Scalar*, Device> b) {
 // Check for Cuda memory and call cublas if true
 #ifdef KOKKOS_HAVE_CUDA
-  if(Impl::is_same<typename DeviceType::memory_space,CudaSpace> ::value ||
-     Impl::is_same<typename DeviceType::memory_space,CudaUVMSpace> ::value) {
-    return call_cublas_dot(a.ptr_on_device(),b.ptr_on_device(),a.dimension_0() );
+  if(Impl::is_same<typename Device::memory_space,
+                            CudaSpace>::value ||
+     Impl::is_same<typename Device::memory_space,
+                            CudaUVMSpace>::value) {
+    return call_cublas_dot(a.ptr_on_device(), b.ptr_on_device(),
+                           a.dimension_0() );
   }
 #endif
 
 // Call CBlas on the host otherwise
-  if(Impl::is_same<typename DeviceType::memory_space,HostSpace> ::value) {
-    return call_cblas_dot(a.ptr_on_device(),b.ptr_on_device(),a.dimension_0() );
+  if(Impl::is_same<typename Device::memory_space,HostSpace>::value) {
+    return call_cblas_dot(a.ptr_on_device(), b.ptr_on_device(),
+                          a.dimension_0() );
   }
 }
 \end{lstlisting}
