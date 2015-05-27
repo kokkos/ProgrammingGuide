@@ -286,21 +286,20 @@ Scalar dot(View<const Scalar* , Device> a,
            View<const Scalar*, Device> b) {
 // Check for Cuda memory and call cublas if true
 #ifdef KOKKOS_HAVE_CUDA
-  if(Impl::is_same<typename Device::memory_space,
-                            CudaSpace>::value ||
-     Impl::is_same<typename Device::memory_space,
-                            CudaUVMSpace>::value) {
+  if(std::is_same<typename Device::memory_space,
+                           CudaSpace>::value ||
+     std::is_same<typename Device::memory_space,
+                           CudaUVMSpace>::value) {
     return call_cublas_dot(a.ptr_on_device(), b.ptr_on_device(),
                            a.dimension_0() );
   }
 #endif
 
 // Call CBlas on the host otherwise
-  if(Impl::is_same<typename Device::memory_space,HostSpace>::value) {
+  if(std::is_same<typename Device::memory_space,HostSpace>::value) {
     return call_cblas_dot(a.ptr_on_device(), b.ptr_on_device(),
                           a.dimension_0() );
   }
 }
 \end{lstlisting}
 
-Note the \lstinline|Impl::is_same| construct can be replaced

@@ -279,7 +279,217 @@ Cuda
   }
 
 \end{minipage}
+\newpage
+\begin{minipage}[h]{\paperwidth}
+  {\begin{tikzpicture}[remember picture,overlay]
+    \node[] at (current page.north west)
+      {\begin{tikzpicture}[remember picture, overlay, scale=0.5]
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (0,-10.5cm) rectangle (8cm,5.5cm);
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (0,-8.5cm) rectangle (6cm,3.5cm);
+          \draw[fill=SandiaBlue,color=SandiaBlue] (0,-6.5cm) rectangle (4cm,1.5cm);          
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (4cm,-6.5cm) circle [radius=4cm];
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (6cm,-8.5cm) circle [radius=6cm];
+          \draw[fill=white,color=white] (8cm,-10.5cm) circle [radius=8cm];
+          \draw[fill=SandiaGray,color=SandiaGray] (0,0cm) rectangle (2\paperwidth,-0.5cm);
+          \draw[fill=SandiaBlue,color=SandiaBlue] (0,-0.5cm) rectangle (2\paperwidth,-2.5cm);
+       \end{tikzpicture}
+      };
+     \node[anchor=north west,xshift=-.05\paperwidth,rectangle,
+               yshift=3.75cm, rounded corners=10pt,inner sep=5pt,
+              fill=SandiaBlue]
+              {\color{white} \LARGE Kokkos: Quick Reference};
+   \end{tikzpicture}
+   }
 
+  {\begin{tikzpicture}[remember picture,overlay]
+      \node[] at (current page.south east)
+      {\begin{tikzpicture}[remember picture, overlay,scale=0.5]
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (-8cm,11.5cm) rectangle (8cm,5.5cm);
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (-6cm,9.5cm) rectangle (6cm,3.5cm);
+          \draw[fill=SandiaBlue,color=SandiaBlue] (0,7.5cm) rectangle (-4cm,1.5cm);          
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (-4cm,7.5cm) circle [radius=4cm];
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (-6cm,9.3cm) circle [radius=6cm];
+          \draw[fill=white,color=white] (-8cm,11.5cm) circle [radius=8cm];
+        \draw[fill=SandiaBlue,color=SandiaBlue] (-2\paperwidth,0.5cm) rectangle
+          (\paperwidth,3.5cm);
+        \draw[fill=SandiaGray,color=SandiaGray] (-2\paperwidth,0) rectangle
+          (\paperwidth,0.5cm);
+       \end{tikzpicture}
+      };                
+      \node[xshift=0.75\paperwidth,rectangle, yshift=2.65cm] at (current page.south west)
+              {\includegraphics[height=0.3in]{figures/SNL_Stacked_Black_Blue.jpg}};
+      \node[xshift=0.6\paperwidth,rectangle, yshift=2.65cm] at (current page.south west)
+              {\includegraphics[height=0.45in]{figures/DOEbwlogo.pdf}};
+           
+   \end{tikzpicture}
+   }
 
+  {\begin{tikzpicture}[remember picture,overlay,trim left]
+     \node[HighLightBox,yshift=-12cm,xshift=0.265\paperwidth] at (current page.north west) (ParallelPatterns)
+     {\begin{minipage}[h]{0.4\paperwidth}
+     \begin{small}
+Algorithms are expressed in parallel patterns for all which applies it:
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item execute every element of index set
+\item order and concurrency are undefined
+\item \lstinline|MemberType| is used for \lstinline|ExecPolicy::member_type|
+\item \lstinline|TagType| is used for \lstinline|ExecPolicy::tag_type|
+\item \lstinline|TagType| is used if it is not \lstinline|void|
+\end{itemize}
+Using appropriate Exececution Policies parallel patterns can be nested.
+\begin{lstlisting}
+parallel_for( ExecPolicy , Functor);
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item calls \lstinline|Functor::operator([TagType,] MemberType)|
+\end{itemize}
+\begin{lstlisting}
+parallel_reduce( ExecPolicy , Functor);
+parallel_reduce( ExecPolicy , Functor, Result);
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item calls \lstinline|Functor::operator([TagType,] MemberType,| \lstinline|ValueType&)|
+\item performs a deterministic reduction over \lstinline|ValueType|
+\item \lstinline|ValueType| is inferred from \lstinline|Functor::operator|
+\item \lstinline|Result| must be a 0D \lstinline|View| of \lstinline|ValueType| or
+an lvalue of \lstinline|ValueType|
+\item thread contributions are combined by \lstinline|Functor::join([TagType, ]volatile ValueType&,| 
+ \lstinline|volatile ValueType&)| or \lstinline|ValueType::operator+=|  \lstinline|(volatile ValueType&)|
+if \lstinline|join| is not defined
+\item thread contributions are initialized by \lstinline|Functor::init([TagType, ] ValueType& )| 
+or \lstinline|ValueType()| if \lstinline|init| is not defined
+\item \lstinline|Functor::finalize([TagType, ] ValueType&)| is called for the final reduction
+value if defined 
+\end{itemize}
+\begin{lstlisting}
+parallel_scan( ExecPolicy , Functor);
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item calls \lstinline|Functor::operator([TagType,] MemberType,| \lstinline|ValueType&, bool final)|
+\item if \lstinline|final == true| \lstinline|ValueType| is the prefix sum
+\item the contributions have to be added to \lstinline|ValueType| irrespective of \lstinline|final|  
+\end{itemize}
+     \end{small}     
+      \end{minipage}
+      };
+      \node[fancytitle, right=10pt] at (ParallelPatterns.north west) {Parallel Patterns};   
+      \end{tikzpicture}
+  }
+  
+  
+  
+  {\begin{tikzpicture}[remember picture,overlay]
+     \node[HighLightBox,yshift=-14cm,xshift=0.75\paperwidth] at (current page.north west) (ExecutionPolicies)
+     {\begin{minipage}[h]{0.4\paperwidth}
+\begin{small}
+Execution Policies govern how a function is executed and what the index space is over which
+the parallel iteration is performed. 
+\begin{lstlisting}
+RangePolicy<[ExecSpace,] [TagType]>
+      (begin, end)
+RangePolicy<[ExecSpace,] [TagType,] INT>
+      (begin, end)
+RangePolicy<[ExecSpace,] [TagType,] IntType>
+      (begin, end)
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item top level policy (i.e. not nested)
+\item statically splits \lstinline|(begin, end]| interval over compute resources
+\item \lstinline|ExecSpace| defaults to \lstinline|DefaultExecutionSpace|
+\item \lstinline|TagType| defaults to \lstinline|void|
+\item providing an integer number specifies chunk size for static splitting
+\item providing an integer type sets the type of the loop index
+\end{itemize}
+\begin{lstlisting}
+TeamPolicy<[ExecSpace,] [TagType]>
+      (league_size, team_size[, vector_length])
+TeamPolicy<[ExecSpace,] [TagType,] INT>
+      (league_size, team_size[, vector_length])
+TeamPolicy<[ExecSpace,] [TagType,] IntType>
+      (league_size, team_size[, vector_length])
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item top level policy (i.e. not nested)
+\item statically splits \lstinline|league_size| range over interval over compute resources
+\item \lstinline|ExecSpace| defaults to \lstinline|DefaultExecutionSpace|
+\item \lstinline|TagType| defaults to \lstinline|void|
+\item providing an integer number specifies chunk size for static splitting
+\item providing an integer type sets the type of the loop index
+\item starts 2D or 3D parallelism: a league of thread teams with vector length
+\end{itemize}
+\begin{lstlisting}
+TeamThreadRange(TeamPolicy<...>::member_type, 
+                begin, end)
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item for each calling team split the range \lstinline|[begin,end)| over threads in the team
+\item must be nested in call with \lstinline|TeamPolicy|
+\item team collective
+\end{itemize}        
+\begin{lstlisting}
+ThreadVectorRange(TeamPolicy<...>::member_type, 
+                begin, end)
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item for each calling thread split the range \lstinline|[begin,end)| over vector lanes
+\item must be nested in call with \lstinline|TeamPolicy|
+\end{itemize}        
+\end{small}
+      \end{minipage}
+      };
+      \node[fancytitle, right=10pt] at (ExecutionPolicies.north west) {Execution Policies};   
+      \end{tikzpicture}
+  }
 
+  {
+  \begin{tikzpicture}[remember picture,overlay,trim left]
+     \node[HighLightBox,yshift=-24.75cm,xshift=0.265\paperwidth] at (current page.north west) (ExecutionSpace)
+     {\begin{minipage}[h]{0.4\paperwidth}
+     \begin{small}
+\begin{lstlisting}
+Serial
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item basic serial execution
+\end{itemize}
+\vspace{-0.4cm}
+\begin{lstlisting}
+OpenMP
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item using OpenMP 3.1 as backend
+\end{itemize}
+\vspace{-0.4cm}
+\begin{lstlisting}
+Threads
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item using Pthreads on Unix based systems
+\end{itemize}
+\vspace{-0.4cm}
+\begin{lstlisting}
+Cuda
+\end{lstlisting}
+\vspace{-0.4cm}
+\begin{itemize}\itemsep1pt \parskip0pt \parsep0pt
+\item using NVIDIAs Cuda 6.5 or higher as backend
+\end{itemize}
+\vspace{-0.4cm}
+\end{small}
+      \end{minipage}
+      };
+      \node[fancytitle, right=10pt] at (ExecutionSpace.north west) {Execution Spaces};   
+   \end{tikzpicture}
+  }
+\end{minipage}
 \end{document}

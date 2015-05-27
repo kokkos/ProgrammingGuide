@@ -78,6 +78,17 @@ which has a special meaning if CUDA is enabled.
 If you do not plan to build with CUDA, you may use \lstinline![=]! explicitly,
 but we find using the macro easier than remembering the capture clause syntax.
 
+It is a violation of Kokkos semantics to capture by reference \lstinline|[&]| for two reasons.
+First Kokkos might give the lambda to an execution space which can not access the stack of 
+the dispatching thread. Secondly, capturing by reference allows the programmer to violate the 
+const semantics of the lambda. For correctness and portability reasons lambdas and functors are
+treated as const objects inside the parallel code section. Capturing by reference allows a circumvention
+of that const property, and enables many more possibilities of writing non-threads-safe code.
+
+When using lambdas for nested parallelism (see Chapter \ref{C:Hierarchical} for details) using
+capture by reference can be useful for performance reasons, but the code is only valid Kokkos
+code if it also works with capturing by copy.
+
 \subsection{Should I use a functor or a lambda?}
 
 Kokkos lets users choose whether to use a functor or a lambda.
@@ -87,7 +98,7 @@ you might find it easier for testing to separate it out and name it as a functor
 Lambdas by definition are ``anonymous functions,'' meaning that they have no name.
 This makes it harder to test them.
 Furthermore, if you would like to use lambdas with CUDA,
-you must have a sufficiently new version of CUDA.
+you must have a sufficiently new version of CUDA (at the time of writing Lambdas are not supported yet supported by the release 7.0).
 Finally, the ``execution tag'' feature, which lets you put together several different parallel loop bodies into a single functor,
 only works with functors.  (See Chapter \ref{C:Hierarchical} for details.)
 
@@ -108,6 +119,7 @@ Kokkos promises nothing about the loop order or the amount of work which actuall
 This means in particular that not all loop iterations are active at the same time.  Consequently, it is not legal to use wait constructs (e.g., wait for a prior iteration to finish). 
 Kokkos also doesn't guarantee that it will use all available parallelism. 
 For example, it can decide to execute in serial if the loop count is very small, and it would typically be faster to run in serial instead of introducing parallelization overhead.
+The \lstinline|RangePolicy| allows you to specify minimal chunk sizes in order to control potential concurrency for low trip count loops.
 
 The lambda or the \lstinline!operator()! method of the functor takes one argument.  That argument is the parallel loop ``index.''
 The type of the index depends on the execution policy used for the \lstinline!parallel_for!.  It is an integer type for the implicit or explicit \lstinline|RangePolicy|.
@@ -431,4 +443,6 @@ class Foo {
   }
 };
 \end{lstlisting}
+
+This approach can also be used to template the operators by templating the tag classes which is useful to enable compile time evaluation of appropriate conditionals. 
 

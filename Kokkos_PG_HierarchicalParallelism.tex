@@ -131,7 +131,7 @@ The argument to the TeamPolicy can be used to set the shared memory size when us
 One restriction on shared memory allocations is that they can not be freed during the lifetime of the team. 
 This avoids the complexity of a memory pool,
 and reduces the time it takes to obtain an allocation
-(which currently is a few operations to calculate the offset). 
+(which currently is a few tens of integer operations to calculate the offset). 
 
 \begin{lstlisting}
 template<class ExecutionSpace>
@@ -168,12 +168,13 @@ Instead of simply getting raw allocations in memory, users can also allocate Vie
 This is achieved by providing the shared memory handle as the first argument of the View constructor.
 Views also have a static member function which return their shared memory size requirements. 
 The function expects the run-time dimensions as arguments, corresponding to View's constructor. 
+Note that the view must be unmanaged (i.e. it must have the \lstinline|Unmanaged| memory trait).
 
 \begin{lstlisting}
 tyepdef Kokkos::DefaultExecutionSpace::scratch_memory_space
   ScratchSpace;
 // Define a view type in ScratchSpace
-typedef Kokkos::View<int*[4],ScratchSpace> shared_int_2d;
+typedef Kokkos::View<int*[4],ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>> shared_int_2d;
 
 // Get the size of the shared memory allocation
 size_t shared_size = shared_int_2d::shmem_size(team_size);

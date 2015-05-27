@@ -90,6 +90,11 @@ Variable & Description \\
       \hspace{0.5cm}Default: & \\
 
 \hline
+   KOKKOS\_CUDA\_OPTIONS (IN): & Enable optional settings specific to CUDA. \\
+      \hspace{0.5cm}Options: & force\_uvm,use\_ldg,rdc \\
+      \hspace{0.5cm}Default: & \\
+
+\hline
    HWLOC\_PATH (IN): & Path to the hardware locality library if enabled. \\
 
 \hline
@@ -154,6 +159,12 @@ Variable & Description \\
 
 More example application Makefiles can be found in the tutorial examples under \verb!kokkos/example/tutorial!.
 
+Kokkos provides a script \lstinline|generate_makefile.bash| which can generate a Makefile for building and installing the library
+as well as building and running the tests. Please run \lstinline|generate_makefile.bash --help| for options. 
+Note that paths given to the script must be absolute paths, and the script must be run with the \lstinline|bash| shell (the script will
+do it if it is run directly i.e. as \lstinline|./generate_makefile.bash|.
+
+
 \section{Using Trilinos' CMake build system}\label{S:build:Trilinos}
 
 The Trilinos project (see \url{trilinos.org}) is an effort to develop
@@ -196,7 +207,7 @@ It analyzes the provided command-line options and prepends them correctly.
 It also adds the correct flags for compiling generic C++ files containing CUDA code (e.g., \verb!*.cpp!, \verb!*.cxx!, or \verb!*.CC!).
 By default \lstinline|nvcc_wrapper| calls \verb!g++! as the host compiler.
 You may override this by providing NVCC's '\lstinline|-ccbin|' option as a compiler flag.
-The default can be reset by editing the script itself. 
+The default can be set by editing the script itself or by setting the environment variable \lstinline|NVCC_WRAPPER_DEFAULT_COMPILER|.
 
 Many people use a system like Environment Modules (see \\ \url{http://modules.sourceforge.net/}) to manage their shell environment.
 When using a module system, it can be useful to provide different versions for different back-end compiler types (e.g., \verb!icpc!, \verb!pgc++!, \verb!g++!, and \verb!clang!).
@@ -204,6 +215,3 @@ To use the \lstinline|nvcc_wrapper| in conjunction with MPI wrappers, simply ove
 For example, you can reset OpenMPI's C++ compiler by setting the \lstinline|OMPI_CXX| environment variable.
 Make sure that \lstinline|nvcc_wrapper| calls the host compiler with which the MPI library was compiled.
 
-\section{Building for Intel Xeon Phi}\label{S:build:Phi}
-
-TODO

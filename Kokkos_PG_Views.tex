@@ -106,6 +106,10 @@ and the following are \emph{not} valid three-dimensional View types:
 This limitation comes from the implementation of View using C++
 templates.  View's first template parameter must be a valid C++ type.
 
+Note that the above used constructor is not necessarily available
+for all view types. Specific Layouts or Memory Spaces may require more 
+specialized allocators. This will be discussed later.
+ 
 \subsection{What types of data may a View contain?}
 
 C++ lets users construct data types that may ``look like'' numbers in
@@ -299,6 +303,17 @@ const size_t n0 = a.dimension_0 ();
 const size_t n2 = a.dimension_2 ();
 \end{lstlisting}
 
+Note the return type of \lstinline|dimension_N()| is the \lstinline|size_type| of the 
+views memory space. This causes some issues if warning free compilation
+should be achieved since it will typically be necessary to cast the return value.
+In particular in cases where the \lstinline|size_type| is more conservative than 
+required it can be beneficial to cast the value to \lstinline|int|, since signed 32 bit
+integers typically give the best performance when used as index types. In index heavy 
+codes this performance difference can be significant compared to using \lstinline|size_t| 
+since the vector length on many architectures is twice as long for 32 bit values as for
+64 bit values, and signed integers have less stringent overflow testing requirements than
+unsigned integers. 
+
 Users of the BLAS and LAPACK libraries may be familiar with the ideas
 of layout and stride.  These libraries only accept matrices in
 column-major format.  The stride between consecutive entries in the
@@ -436,12 +451,12 @@ Deep copies can only be performed between views with an identical
 memory layout and padding. For example the following two operations
 are not valid:
 \begin{lstlisting}
-View<int*[3]> a ("a", CudaSpace, 10);
-View<int*[3]> b ("b", HostSpace, 10);
+View<int*[3], CudaSpace> a ("a", 10);
+View<int*[3], HostSpace> b ("b", 10);
 deep_copy (a, b); // This will give a compiler error
 
-View<int*[3], LayoutLeft> c ("c", CudaSpace, 10);
-View<int*[3], LayoutLeft> d ("d", HostSpace, 10);
+View<int*[3], LayoutLeft, CudaSpace> c ("c", 10);
+View<int*[3], LayoutLeft, HostSpace> d ("d", 10);
 deep_copy (c, d); // This might give a runtime error
 \end{lstlisting}
 
@@ -467,10 +482,10 @@ allocate a new view, while \lstinline|create_mirror_view| will only create a
 new view if the original one is not in \lstinline|HostSpace|.
 
 \begin{lstlisting}
-View<int*[3]> a ("a", MemorySpace, 10);
+View<int*[3], MemorySpace> a ("a", 10);
 // Allocate a view in HostSpace with the 
 // layout and padding of a
-typename View<int*[3]>::HostMirror b =
+typename View<int*[3], MemorySpace>::HostMirror b =
     create_mirror(a);
 // This is always a memcopy
 deep_copy (a, b); 
@@ -550,15 +565,21 @@ View<int*, LayoutLeft, MemorySpace, MemoryTraits<SomeTrait> > e;
 \subsection{Atomic access}
 
 The \lstinline!Atomic! access trait lets you create a View of data , such that every
-read or write to any entry uses an atomic update.  This only works for
-certain data types, for which the hardware and programming model
-support atomic updates.  Currently, Kokkos limits atomic updates to
-32-bit or 64-bit types\footnote{On X86 architectures Kokkos also supports 
-128-bit atomics. Types for which atomic access are performed must support the 
-necessary operators such as =,+=,-=,+,- etc.}.
+read or write to any entry uses an atomic update. Kokkos supports atomics for 
+all data types independent of size. Restrictions are that you are (i) not allowed to alias data
+for which atomic operations are performed, and the results of non atomic accesses (
+including read) to data which is at the same time atomically accessed is not defined. 
 
-Note that it is a violation of the semantics to write \emph{or} read from a 
-non-atomic view of data if at the same time an atomic view of the data is used.
+Performance characteristics of atomic operation depend on the data type. 
+Some types (in particular integer types) are natively supported and might even provide 
+asynchronous atomic operations. Others (such as 32 bit and 64 bit atomics for non 
+integer types) are often implemented using CAS loops of integers. 
+Everything else is implemented with a locking approach, where an atomic operations 
+aquires a lock based on a hash of the pointer value of the data element.  
+
+Types for which atomic access are performed must support the 
+necessary operators such as =,+=,-=,+,- etc. as well as have a number of \lstinline|volatile|
+overloads of functions such as assign and copy constructors defined. 
 
 \begin{lstlisting}
 View<int*> a("a" , 100);
@@ -614,7 +635,7 @@ spmatvec (const View<double*>& y,
   const View<const double*>& x)
 {
   // Access to x has less locality than access to y.
-  View<const double*, RandomAccess> x_ra;
+  View<const double*, RandomAccess> x_ra = x;
   typedef View<const size_t*>::size_type size_type;
 
   parallel_for (y.dimension_0 (), KOKKOS_LAMBDA (const size_type i) {
