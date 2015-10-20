@@ -328,7 +328,7 @@ struct ColumnSums {
   // so we don't pass it in by reference here.
   KOKKOS_INLINE_FUNCTION void
   join (volatile value_type dst,
-        volatile value_type src) const {
+        const volatile value_type src) const {
     for (size_type j = 0; j < value_count; ++j) {
       dst[j] += src[j];
     }
