@@ -98,7 +98,10 @@ you might find it easier for testing to separate it out and name it as a functor
 Lambdas by definition are ``anonymous functions,'' meaning that they have no name.
 This makes it harder to test them.
 Furthermore, if you would like to use lambdas with CUDA,
-you must have a sufficiently new version of CUDA (at the time of writing Lambdas are not supported yet supported by the release 7.0).
+you must have a sufficiently new version of CUDA. 
+At the time of writing CUDA 7.5 supports lambdas using a special flag. 
+To enable this support, use the \lstinline|KOKKOS_CUDA_OPTIONS=enable_lambda| option.
+
 Finally, the ``execution tag'' feature, which lets you put together several different parallel loop bodies into a single functor,
 only works with functors.  (See Chapter \ref{C:Hierarchical} for details.)
 

@@ -109,7 +109,24 @@ templates.  View's first template parameter must be a valid C++ type.
 Note that the above used constructor is not necessarily available
 for all view types. Specific Layouts or Memory Spaces may require more 
 specialized allocators. This will be discussed later.
- 
+
+Another important thing to keep in mind is that a \lstinline|View| handle is a 
+stateful object. It is not legal to create a \lstinline|View| handle from
+raw memory by typecasting a pointer. To call any operator on a \lstinline|View|
+its constructor must have been called before. This includes the assignment
+operator. If it is necessary to initialize raw memory with a \lstinline|View| 
+handle, one can legally do so using a move constructor (``placement new'').
+The above has nothing to do with the data a \lstinline|View| is referencing.
+It is completely legal to give a typecast pointer to the constructor of an
+unmanaged \lstinline|View|.
+
+\begin{lstlisting}
+View<int*> * a_ptr = (View<int*>*) malloc(10*sizeof(View<int*);
+a_ptr[0] = View<int*>("A0",1000); // This is illegal
+new(&a_ptr[1]) View<int*>("A1",10000); // This is legal 
+\end{lstlisting}
+
+
 \subsection{What types of data may a View contain?}
 
 C++ lets users construct data types that may ``look like'' numbers in
@@ -327,6 +344,13 @@ Other layouts are possible.  For example, Kokkos has a ``tiled''
 layout, where a tile's entries are stored contiguously (in either row-
 or column-major order) and tiles have compile-time dimensions.  One
 may also use Kokkos to implement Morton ordering or variants thereof.
+In order to write a custom layout one has to define a new layout class and
+specialise the \lstinline|ViewMapping| class for that layout. 
+The \lstinline|ViewMapping| class implements the offset operator as well
+as stride calculation for regular layouts. 
+A good way to start such a customization is by copying the implementation of 
+\lstinline|LayoutLeft| and its associated \lstinline|ViewMapping| specialization,
+renaming the layout and then change the offset operator. 
 
 \subsection{Default layout depends on execution space}\label{SS:View:Layout:Default}
 
@@ -368,7 +392,7 @@ template<class ViewType>
 void callBlas (const ViewType& A) {
   typedef typename ViewType::array_layout array_layout;
   if (std::is_same<array_layout, LayoutLeft>::value) {
-    callSomeBlasFunction (A.ptr_on_device (), ...);
+    callSomeBlasFunction (A.data(), ...);
   } else {
     throw std::invalid_argument ("A is not LayoutLeft");
   }
@@ -508,7 +532,7 @@ For example, a View in the \lstinline!Cuda! space points to CUDA device
 memory. Also using raw pointers would normally defeat the usability 
 of polymorpic layouts and automatic padding. 
 Nevertheless, sometimes you really need access to the
-pointer.  For such cases, we provide the \lstinline!ptr_on_device()!
+pointer.  For such cases, we provide the \lstinline!data()!
 method.  For example:
 \begin{lstlisting}
 // Legacy function that takes a raw pointer.
@@ -517,7 +541,7 @@ extern void legacyFunction (double* x_raw, const size_t len);
 // Your function that takes a View.
 void myFunction (const View<double*>& x) {
   // DON'T DO THIS UNLESS YOU MUST
-  double* a_raw = a.ptr_on_device ();
+  double* a_raw = a.data ();
   const size_t N = x.dimension_0 ();
   legacyFunction (a_raw, N);
 }
@@ -681,4 +705,31 @@ double* x_raw = malloc (N0 * sizeof (double));
 }
 free (x_raw);
 \end{lstlisting}
+
+\subsection{Conversion Rules and Function Specialization}
+
+Not all view types can be assigned to each other. In summary
+the data type and dimension have to match, the layout must be
+compatible and the memory space has to match. Examples illustrating
+the rules are:
+
+\begin{enumerate}
+\item Memory Spaces must match
+\subitem \lstinline{ Kokkos::View<int*> -> Kokkos::View<int*,HostSpace> // ok if default memory space is HostSpace}
+\item Data Type and Rank has to Match
+\subitem \lstinline{int*  -> int*          //ok}
+\subitem \lstinline{int*  -> const int*    //ok}
+\subitem \lstinline{const int*  -> int*    //not ok, const violation}
+\subitem \lstinline{int** -> int*          //not ok, rank mismatch}
+\subitem \lstinline{int*[3] -> int**       //ok}
+\subitem \lstinline{int** -> int*[3]       //ok if runtime dimension check matches}
+\subitem \lstinline{int*  -> long*         //not ok, type mismatch}
+\item Layouts must be compatible
+\subitem \lstinline{LayoutRight -> LayoutRight //ok}
+\subitem \lstinline{LayoutLeft -> LayoutRight  //not ok}
+\subitem \lstinline{LayoutLeft -> LayoutSride  //ok}
+\subitem \lstinline{LayoutStride -> LayoutLeft //ok if runtime dimensions allow assignment}
+\item Memory Traits 
+\end{enumerate}
+
 

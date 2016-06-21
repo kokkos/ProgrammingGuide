@@ -42,6 +42,17 @@ Macro & Effect & Comment \\
 \end{small}
 \end{table}
 
+In order to compile Kokkos a C++11 compliant compiler is needed. 
+For an up to date list of compilers which are tested on a nightly basis, please refer to the README on the github repository. 
+At the time of writing supported compilers include: 
+\begin{lstlisting}
+  GCC   4.7.2, 4.8.x, 4.9.x, 5.1.x, 5.3.x
+  Intel 14.x, 15.x, 16.x, 17.x 
+  Clang 3.5.1, 3.6.x, 3.7.x, 3.8.x, 3.9.x; 
+  Cuda  6.5, 7.0, 7.5, 8.0; 
+  XL 13.3;
+\end{lstlisting}
+
 \section{Using Kokkos' Makefile system}\label{S:build:make}
 
 The base of the build system is the Makefile.kokkos, which is designed to be included by application Makefiles.
@@ -79,7 +90,7 @@ Variable & Description \\
 
 \hline    
     KOKKOS\_ARCH (IN): & What backend Architecture to build for. \\
-      \hspace{0.5cm}Options: & KNC,SNB,HSW,Kepler,Kepler30,Kepler35,Kepler37,Maxwell,
+      \hspace{0.5cm}Options: & KNL,KNC,SNB,HSW,Kepler,Kepler30,Kepler35,Kepler37,Maxwell,
                Maxwell50,ARMv8,BGQ,Power7,Power8 \\
       \hspace{0.5cm}Default: & None -- this means no particular architecture flags
                are set. \\
@@ -90,8 +101,13 @@ Variable & Description \\
       \hspace{0.5cm}Default: & \\
 
 \hline
+   KOKKOS\_OPTIONS (IN): & Enable optional settings \\
+      \hspace{0.5cm}Options: & aggressive\_vectorization \\
+      \hspace{0.5cm}Default: & \\
+
+\hline
    KOKKOS\_CUDA\_OPTIONS (IN): & Enable optional settings specific to CUDA. \\
-      \hspace{0.5cm}Options: & force\_uvm,use\_ldg,rdc \\
+      \hspace{0.5cm}Options: & force\_uvm,use\_ldg,rdc,enable\_lambda \\
       \hspace{0.5cm}Default: & \\
 
 \hline
