@@ -6,7 +6,7 @@ You may nest these levels of parallelism,
 and execute \lstinline!parallel_for!, \lstinline!parallel_reduce!, or \lstinline!parallel_scan! at each level.
 The syntax differs only by the execution policy,
 which is the first argument to the \verb!parallel_*! operation.
-Kokkos also exposes a ``scratch pad'' memory which all threads within a team may share.
+Kokkos also exposes a ``scratch pad'' memory which provides thread private and team private allocations..
 
 \section{Motivation}\label{S:Hierarchical:Motivation}
 
@@ -37,6 +37,16 @@ This enables adaptive kernels which map work to different hardware resources dep
 While Kokkos provides defaults and suggestions, the optimal mapping can be algorithm dependent. 
 Hierarchical parallelism is accessible through execution policies.
 
+You should use Hierarchical Parallelism in particular in a number of cases:
+\begin{enumerate}
+\item Non-tightly nested loops: Hierarchical Parallelism allows you to expose more parallelism.
+\item Data gather + reuse: If you gather data for a particular iteration of an outer loop, and then repeatiptly use it in an inner loop, Hierarchical Parallelism with scratch memory may match the usecase well.
+\item Force Cache Blocking: Using Hierarchical Parallelism forces a developer into algorithmic choices which are good for cache blocking. This can sometimes lead to better performing algorithms, than simple flat parallelism.
+\end{enumarate}
+
+On the other hand you should probably not use Hierarchical Parallelism if you have tightly nested loops. 
+For that usecase a multi dimensional RangePolicy is the better fit. 
+
 \section{Thread teams}\label{S:Hierarchical:Teams}
 
 Kokkos' most basic hierarchical parallelism concept is a thread team.
@@ -63,7 +73,7 @@ It can be created inline for the parallel dispatch call.
 The constructors requires two arguments: a league size and a team size. 
 In place of the team size a user can utilize \lstinline|Kokkos::AUTO| to let Kokkos guess a good team size for a given architecture.
 Doing that is the recommend way for most developers to utilize the \lstinline|TeamPolicy|.
-As with the  \lstinline|Kokkos::RangePolicy| a specific execution tag and a specific execution space can be given as optional template arguments.
+As with the  \lstinline|Kokkos::RangePolicy| a specific execution tag, a specific execution space, a \lstinline|Kokkos::IndexType|, and a \lstinline|Kokkos::Schedule| can be given as optional template arguments.
 \begin{lstlisting}
 // Using default execution space and launching 
 // a league with league_size teams with team_size threads each
@@ -81,7 +91,7 @@ Kokkos::TeamPolicy<SomeTag, ExecutionSpace>
 \end{lstlisting}
 
 
-\subsection{Basic kernels}\label{SS:Hierarchical:Teams:Kernels}
+\subsection{Basic kernels}\label{SS:Hierarchical:Teams:Kernels}:
 
 The team policy's \lstinline!member_type! provides the necessary functionality to use teams within a parallel kernel.
 It allows access to thread identifiers such as the league rank and size, and the team rank and size.
