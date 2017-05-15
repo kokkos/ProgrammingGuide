@@ -58,7 +58,7 @@ of indices other than contiguous ranges.  These may include
 \section{How to take a subview}\label{S:Subviews:How}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-To take a subview of a View, use the \texttt{Kokkos::subview}
+To take a subview of a View, you can use the \texttt{Kokkos::subview}
 function.  This function is overloaded for all different kinds of
 Views and index ranges.  For example, the following code is equivalent
 to the above example \texttt{A(2:4, 3:7)}:
@@ -83,10 +83,22 @@ dimension) is \texttt{ALL()} (an instance of the \texttt{ALL} class,
 which Kokkos uses only for this purpose).  Kokkos does not currently
 have equivalents of the strided or arbitrary index sets.
 
-A subview has the same reference count as its parent View, so the
-parent View won't be deallocated before all subviews go away.  Every
-subview is also a View.  This means that you may take a subview of a
+A subview has the same reference count as its parent \lstinline!View!, so the
+parent \lstinline!View! won't be deallocated before all subviews go away.  Every
+subview is also a \lstinline!View!.  This means that you may take a subview of a
 subview.
+
+Another way of getting a subview is throught the appropriate \lstinline{View} constructor.
+\begin{lstlisting}
+const size_t N0 = ...;
+const size_t N1 = ...;
+View<double**> A ("A", N0, N1);
+
+View<double**,LayoutStride> A_sub(A,make_pair(2,4),make_pair(3,7));
+\end{lstlisting}
+For this usage you must know the layouttype of the subview. 
+On the positive side, such a direct construction is generally a bit cheaper than
+through the \lstinline!Kokkos::subview! function. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{C++11 type deduction}\label{SS:Subviews:How:auto}
@@ -100,9 +112,11 @@ entire row of \lstinline!A! has \lstinline!LayoutRight! as well, but a
 subview of an entire column of \lstinline!A! has
 \lstinline!LayoutStride!.  If you assign the result of the
 \texttt{subview} function to the wrong type, Kokkos will emit a
-compile-time error.  The best way to avoid this is to use the C++11
+compile-time error.  The easiest way to avoid this is to use the C++11
 \texttt{auto} keyword to let the compiler deduce the correct type for
-you.
+you. That said \lstinline!auto! comes with its own cost. 
+It generally is more expansive for compilers to deal with \lstinline!auto! than with 
+explicitly known types. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Dimension of a subview}\label{SS:Subviews:How:dim}

@@ -5,6 +5,14 @@ The programming model Kokkos is characterized by 6 core abstractions: Execution 
 These abstraction concepts allow the formulation of generic algorithms and data structures which can then be mapped to different types of architectures. 
 Effectively they allow for compile time transformation of algorithms to allow for adaptions of varying degrees of hardware parallelism as well as of the memory hierarchy. 
 
+\begin{figure}[h]
+\begin{center}
+\includegraphics[clip, trim=1cm 5.5cm 12cm 2.5cm, width=\textwidth]{figures/kokkos-abstractions.pdf}
+\caption{The core abstractions of the Kokkos Programming Model}
+\label{fig:kokkosabstractions}
+\end{center}
+\end{figure}
+
 \section{Execution Spaces}
 
 An Execution Space is the place {\it Where} code can actually be executed. 
@@ -48,7 +56,7 @@ All threads in a team are guaranteed to run concurrently.
 
 Threads in a team can synchronize -- they have a ``barrier'' primitive -- 
 and share a ``scratch pad'' memory which they may use for temporary storage.
-Note that the not all forms of synchronization mechanism are legal in Kokkos, in particular
+Note that not all forms of synchronization mechanism are legal in Kokkos, in particular
 implementing ``spin-locks'' for threads in a team may result in dead locks. 
 In Kokkos there is no forward progress guarantee for threads, that means that a single thread spinning
 on a lock acquired by another thread of the team may use 100\% of the compute engines resources.
@@ -92,13 +100,13 @@ Memory Spaces are the places {\it Where} data resides.
 They specify physical location of data as well as certain access characteristics. 
 Different physical locations correspond to things such as high bandwidth memory, on die scratch memory or non-volatile bulk storage.
 Different logical memory spaces allow for concepts such as UVM memory in the CUDA programming model, which is accessible from Host and GPU. 
-Memory Spaces also can be used to express remote memory locations.
+Memory Spaces also could in the futrue also be used to express remote memory locations.
 Furthermore they encapsulate functionality such as consistency control and persistence scopes.
 
 \section{Memory Layout}
 
 Layouts express the mapping from logical (or algorithmical) indicies to address offset for a data allocation. 
-By adopting appropriate layouts for memort structures an application can optimise data access patterns in a given algorithm.
+By adopting appropriate layouts for memory structures an application can optimise data access patterns in a given algorithm.
 If an implementation provides polymorphic layouts (i.e. a data structure can be instantiated at compile or runtime with different layouts) an architecture dependent optimisation can be performed.
 
 \section{Memory Traits}

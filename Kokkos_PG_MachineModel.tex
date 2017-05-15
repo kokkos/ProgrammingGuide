@@ -21,7 +21,7 @@ Kokkos is comprised of two orthogonal aspects. The first of these is
 an underlying {\em abstract machine model} which describes fundamental
 concepts required for the development of future portable and performant
 high performance computing applications; the second is a concrete instantiation
-of the programming this model written in C++, which allows programmers
+of the programming model written in C++, which allows programmers
 to write to the concept machine model. It is important to treat these
 two aspects to Kokkos as distinct entities because the underlying model
 being used by Kokkos could, in the future, be instantiated in additional
@@ -50,9 +50,10 @@ multiple latency-optimized cores, similar to contemporary processor
 cores, and a second source of compute in the form of an off die
 accelerator. Of note is that the processor and accelerator each 
 have distinct memories, each with unique performance properties,
-that are accessible across the node ({\em i.e.} the memory is
-reachable or {\em shared} by all execution units. The specific
-layout shown in Figure~\ref{fig:kokkosnode} is an instantiation
+that may or may not be accessible across the node ({\em i.e.} the memory may be
+reachable or {\em shared} by all execution units, but specific 
+memory spaces may also be only accessible by specifc execution units). 
+The specific layout shown in Figure~\ref{fig:kokkosnode} is an instantiation
 of the Kokkos abstract machine model used to describe the potential
 for multiple types of compute engines and memories within a single
 node. In future systems there may be a range of execution engines
@@ -98,10 +99,9 @@ execution space instances available to select from. The
 important consideration here is that the method of
 compiling code for different execution spaces and the
 dispatch of kernels to instances is abstracted by the Kokkos
-framework allowed application programmers to be free from 
-written algorithms in hardware specific languages or
-requiring the programmer to understand the restrictions
-required for parallel execution in the execution space.
+model. 
+This allows application programmers to be free from 
+writing algorithms in hardware specific languages.
 
 \subsection{Kokkos Memory Spaces}
 
@@ -116,13 +116,10 @@ required for parallel execution in the execution space.
 The multiple types of memory which will become available in future
 computing nodes are abstracted by Kokkos through {\em memory
 spaces}. Each memory space provides a finite storage capacity
-at which data structures can be allocated and accessed. In
-order to provide portable allocations and performant access,
-Kokkos requires data to be allocated as a $k$-dimensioned array,
-where $k$ must be greater than equal to zero (a zero array being
-a scalar). Each dimension of the array can be either fixed in
-size at compile time or dynamically sized with size resolution
-performed during execution.
+at which data structures can be allocated and accessed. 
+Differnt memory space types have different characteristics with respect
+to accesibility from execution spaces as well as their performance
+characteristics. 
 
 \subsection{Instances of Kokkos Memory Spaces}
 
@@ -165,14 +162,6 @@ programmers to safely increment a memory value for instance,
 or, more commonly, to safely accumulate values from multiple
 threads into a single memory locations.
 
-Although atomic operations are logically an operation
-on memory, they are performed by compute units and so
-are a property of execution spaces in the Kokkos framework.
-Execution spaces are not guaranteed to provide atomic
-operations support but attempts to use them on spaces
-which do not support atomic access will result in 
-a compile time error.
-
 
 \paragraph{Memory Consistency in Kokkos}
 
@@ -183,7 +172,7 @@ see reference~\cite{handp_hardware}.
 Kokkos, does not {\em require} caches to be present
 in hardware and so assumes an extremely weak memory consistency
 model. In the Kokkos model, the programmer should not assume any
-specific ordering of memory operations being isused by a
+specific ordering of memory operations being isued by a
 kernel. This has the potential to create race conditions between
 memory operations if these are not appropriately protected. In
 order to provide a guaranteed that memory are completed, Kokkos
@@ -193,8 +182,6 @@ any new ones can be issued. With appropriate use of fences,
 programmers are thereby able to ensure that guarantees can
 be made as to when data will {\em definitely} have been 
 written to memory.
-
-
 
 %\section{Thread teams}\label{S:Model:Teams}
 %
