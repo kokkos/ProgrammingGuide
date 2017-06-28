@@ -202,8 +202,9 @@ TeamPolicy<> policy_3 = TeamPolicy<>(league_size, team_size).
 The total amount of scratch space available for each team will be the per-team value plus the per-thread value multiplied by the team-size. 
 The interface allows users to specify those settings inline:
 \begin{lstlisting}
-parallel_for(TeamPolicy<>(league_size, team_size).set_scratch_size(1, PerTeam(1024)),
-  KOKKOS_LAMBDA (const TeamPolicy<>::member_type& team) {
+parallel_for(
+  TeamPolicy<>(league_size, team_size).set_scratch_size(1, PerTeam(1024)),
+    KOKKOS_LAMBDA (const TeamPolicy<>::member_type& team) {
     ...
 });
 \end{lstlisting}

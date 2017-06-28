@@ -715,7 +715,8 @@ the rules are:
 
 \begin{enumerate}
 \item Memory Spaces must match
-\subitem \lstinline{ Kokkos::View<int*> -> Kokkos::View<int*,HostSpace> // ok if default memory space is HostSpace}
+  \subitem \lstinline{ Kokkos::View<int*> -> Kokkos::View<int*,HostSpace>}
+  \subitem \lstinline{                      //ok if default memory space is HostSpace}
 \item Data Type and Rank has to Match
 \subitem \lstinline{int*  -> int*          //ok}
 \subitem \lstinline{int*  -> const int*    //ok}
