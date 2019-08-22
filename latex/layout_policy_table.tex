@@ -1,0 +1,21 @@
+\begin{tabular}{|c|p{15em}|}
+\hline
+Expression & Meaning \\
+\hline
+    \texttt{M} & A \texttt{LayoutMapping} type. \\
+    \texttt{m} & An instance of \texttt{M}. \\
+    \texttt{E} & A specialization of \texttt{std::extents}. \\
+    \texttt{e} & An instance of \texttt{E}. \\
+    \texttt{i...} and \texttt{j...} & Multidimensional indices in the multidimensional index space described by \texttt{e} \\
+    \texttt{m.extents()} & The extents object \texttt{e} representing the multidimensional index domain of the mapping.  \\
+    \texttt{m(i...)} & A nonnegative value representing the codomain offset corresponding to \texttt{i...}. \\
+    \texttt{m.required\_span\_size()} & The maximum value of \texttt{m(i...)} plus \texttt{1} if all extents are non-zero, or \texttt{0} otherwise. \\
+    \texttt{m.is\_unique()} & \texttt{true} only if for every \texttt{i... != j...}, \texttt{m(i...) != m(j...)}. \\
+    \texttt{m.is\_contiguous()} & \texttt{true} only if the set defined by all \texttt{m(i...)} equals the set $\{0, ..., \mathtt{m.required\_span\_size()} - 1\}$ \\
+    \texttt{m.is\_strided()} & \texttt{true} only if $\forall r \in [0, \mathtt{e.rank()}), \exists K_r$ such that $\forall \mathtt{i...}, \mathtt{j...} \in \mathtt{e}$, if all elements of \texttt{i...} and \texttt{j...} are equal except for the $r^{\mathrm{th}}$ element, with $j_r = i_r + 1$, then $K_r$ equals \texttt{m(j...) - m(i...)}. \\
+    \texttt{m.stride(r)} & The integer $K_r$, as described above.  Only required if \texttt{m.is\_strided()} is \texttt{true}. \\
+    \texttt{M::is\_always\_unique()} & \texttt{true} only if \texttt{m.is\_unique()} is \texttt{true} for all instances of \texttt{M}. \\
+    \texttt{M::is\_always\_contiguous()} & \texttt{true} only if \texttt{m.is\_contiguous()} is \texttt{true} for all instances of \texttt{M}. \\
+    \texttt{M::is\_always\_strided()} & \texttt{true} only if \texttt{m.is\_strided()} is \texttt{true} for all instances of \texttt{M}. \\
+\hline
+\end{tabular}
