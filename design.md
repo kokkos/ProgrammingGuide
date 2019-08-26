@@ -2,7 +2,7 @@
 Design
 ======
 
-In its most basic form, `mdspan` provides a class template for creating types of objects that represent a contiguous piece (or "span") of memory that is to be treated as a multidimensional entity with one or more dimensional constraints.  Together, these dimensional constraints form a multi-index domain.  In the simple case of a two dimensional entity, for instance, this multi-index domain encompasses the row and column indices of what is typically called a matrix.  For instance,
+In its most basic form, `mdspan` provides a class template for creating types of objects that represent a contiguous piece (or "span") of memory that is to be treated as a multidimensional entity with one or more dimensional constraints.  Together, these dimensional constraints form a multi-index domain.  In the simple case of a two dimensional entity, for instance, this multi-index domain encompasses the row and column indices of what is typically called a matrix.  For instance, 
 
 ```c++
 void some_function(double* data) {
@@ -26,11 +26,17 @@ void another_function(double* data) {
 }
 ```
 
-This code snippet also treats `data` as a 20 by 40 matrix, but the first of these dimensions is "baked in" to the type at compile time---all instances of the type `mdspan<double, 20, dynamic_extent>` will have 20 rows.
+This code snippet also treats `data` as a 20 by 40 matrix, but the first of these dimensions is "baked in" to the type at
+ compile time---all instances of the type `mdspan<double, 20, dynamic_extent>` will have 20 rows.
 
-The design is greatly simplified by delegating the ownership and lifetime management of the data to a orthogonal constructs.  Thus, `mdspan` merely interprets existing memory as a multi-dimensional entity, leaving management of the underlying memory to the user.  This follows a trend of similar constructs recently introduced to C++, such as `string_view` and `span`.  Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are also non-owning entities which delegate lifetime management as a separate concern.
+The design is greatly simplified by delegating the ownership and lifetime management of the data to a orthogonal constructs.  
+Thus, `mdspan` merely interprets existing memory as a multi-dimensional entity, leaving management of the underlying memory to the user. 
+This follows a trend of similar constructs recently introduced to C++, such as `string_view` and `span`.  
+Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are 
+also non-owning entities which delegate lifetime management as a separate concern.
 
-References to entries in these matrices are obtained by giving a multi-index (that is, a set of indices) to `operator()` of the object, which has been overloaded for this purpose:
+References to entries in these matrices are obtained by giving a multi-index (that is, a set of indices) to `operator()` 
+of the object, which has been overloaded for this purpose:
 
 ```c++
 // add 3.14 to the value on
@@ -42,6 +48,25 @@ my_matrix(10, 5) += 3.14;
 // the column with index 38
 printf("%f", another_matrix(0, 38));
 ```
+
+The lenght of each dimension is accessed via the `extent` member function. It takes an index to indicate the dimension.
+A loop to multiply all entries of the matrix by a scalar could thus look like this:
+
+```c+=
+for(int row=0; row<my_matrix.extent(0); row++)
+  for(int col=0; col<my_matrix.extent(1); col++)
+    my_matrix(row,col) *= 2.0;
+```
+
+As `std::string` is actually a C++ alias for `std::basic_string` so is `std::mdspan` an alias for `std::basic_mdspan`.
+Where `std::mdspan` only provides control over the scalar type and the extents, `std::basic_mdspan` exposed more customization points. 
+It is templated on four parameters: the scalar type, the extents object, the layout and the accessor policy. 
+In the following we will describe these parameters and their utility in achieving higher performacne or better portability. 
+
+## Extent abstraction
+
+The extents object encapsulates the description of the multi-dimensional index space of an `mdspan`. 
+
 
 ## Layout abstraction
 
