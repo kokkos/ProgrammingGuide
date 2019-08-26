@@ -5,9 +5,9 @@ Design
 In its most basic form, `mdspan` provides a class template for creating types of objects that represent a contiguous piece (or "span") of memory that is to be treated as a multidimensional entity with one or more dimensional constraints.  Together, these dimensional constraints form a multi-index domain.  In the simple case of a two dimensional entity, for instance, this multi-index domain encompasses the row and column indices of what is typically called a matrix.  For instance, 
 
 ```c++
-void some_function(double* data) {
+void some_function(float* data) {
   auto my_matrix =
-    mdspan<double, dynamic_extent, dynamic_extent>(
+    mdspan<float, dynamic_extent, dynamic_extent>(
       data, 20, 40
     );
   /* ... */
@@ -17,9 +17,9 @@ void some_function(double* data) {
 says to create an object that interprets memory starting at the pointer `data` as a matrix with the shape 20 rows by 40 columns.  Extents can be provided either statically (i.e., at compile-time) or dynamically, and static extents can be mixed with dynamic extents:
 
 ```c++
-void another_function(double* data) {
+void another_function(float* data) {
   auto another_matrix =
-    mdspan<double, 20, dynamic_extent>(
+    mdspan<float, 20, dynamic_extent>(
       data, 40
     );
   /* ... */
@@ -29,10 +29,8 @@ void another_function(double* data) {
 This code snippet also treats `data` as a 20 by 40 matrix, but the first of these dimensions is "baked in" to the type at
  compile time---all instances of the type `mdspan<double, 20, dynamic_extent>` will have 20 rows.
 
-The design is greatly simplified by delegating the ownership and lifetime management of the data to a orthogonal constructs.  
-Thus, `mdspan` merely interprets existing memory as a multi-dimensional entity, leaving management of the underlying memory to the user. 
-This follows a trend of similar constructs recently introduced to C++, such as `string_view` and `span`.  
-Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are 
+The design is greatly simplified by delegating the ownership and lifetime management of the data to a orthogonal constructs.  Thus, `mdspan` merely interprets existing memory as a multi-dimensional entity, leaving management of the underlying memory to the user. 
+This follows a trend of similar constructs recently introduced to C++, such as `string_view` and `span`.  Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are 
 also non-owning entities which delegate lifetime management as a separate concern.
 
 References to entries in these matrices are obtained by giving a multi-index (that is, a set of indices) to `operator()` 
@@ -42,31 +40,26 @@ of the object, which has been overloaded for this purpose:
 // add 3.14 to the value on
 // the row with index 10 and
 // the column with index 5
-my_matrix(10, 5) += 3.14;
+my_mat(10, 5) += 3.14;
 // print the value of the entry
 // in the row with index 0 and
 // the column with index 38
 printf("%f", another_matrix(0, 38));
 ```
 
-The lenght of each dimension is accessed via the `extent` member function. It takes an index to indicate the dimension.
+The length of each dimension is accessed via the `extent` member function. It takes an index to indicate the dimension.
 A loop to multiply all entries of the matrix by a scalar could thus look like this:
 
-```c+=
-for(int row=0; row<my_matrix.extent(0); row++)
-  for(int col=0; col<my_matrix.extent(1); col++)
-    my_matrix(row,col) *= 2.0;
+```c++
+for(int row = 0; row < my_mat.extent(0); row++)
+  for(int col = 0; col < my_mat.extent(1); col++)
+    my_mat(row, col) *= 2.0;
 ```
 
 As `std::string` is actually a C++ alias for `std::basic_string` so is `std::mdspan` an alias for `std::basic_mdspan`.
 Where `std::mdspan` only provides control over the scalar type and the extents, `std::basic_mdspan` exposed more customization points. 
 It is templated on four parameters: the scalar type, the extents object, the layout and the accessor policy. 
-In the following we will describe these parameters and their utility in achieving higher performacne or better portability. 
-
-## Extent abstraction
-
-The extents object encapsulates the description of the multi-dimensional index space of an `mdspan`. 
-
+In the following we will describe these parameters and their utility in achieving higher performance or better portability. 
 
 ## Layout abstraction
 
@@ -80,7 +73,7 @@ A brief survey of existing practice (such as the BLAS technical standard [CITATI
 * strided layouts (represented by the `LD` parameters in BLAS); these generalize to any in a class of layouts that can describe the distance in memory between two consecutive indices in a particular dimension with a constant (specific to that dimension).
 * symmetric layouts (e.g., from the `xSYMM` algorithms in BLAS), which also includes generalizations like whether the upper or lower triangle is stored (the `UPLO` parameter in BLAS) and whether the diagonal is stored explicitly, implicitly, or in some separate, contiguous storage.
 
-In addition to similarities, it is also instructive to look at what differences these layout mappings may introduce, which some algorithms may not be generic over.  In general, as many previous researchers have noted [CITATIONNEEDED], the design of generic concepts for customization typically begins with the algorithms, not the data structures.  Much of the design of `LayoutMapping` can be motivated with some very simple algorithms.  Consider an algorithm, `scale()`, that takes an `mdspan` and a scalar and multiplies each entry, in place, by the scalar.  For brevity, we will only consider the two-dimensional case here (though much of this motivation can be done even in the one-dimensional case).  If such an algorithm is to be implemented in the simplest possible way---iterating over the rows and column indices and scaling each element---the implementation would fail to meet the semantic requirements of the algorithm for symmetric layouts, since non-diagonal entries reference the same memory.  Thus, it is necessary for certain algorithms to know whether each multi-index in the domain maps to a unique offset in the codomain (the space of all offsets that the mapping can result in).  (An example of an algorithm for which this requirement is *not* needed is `dot_product()`.)  The `LayoutMapping` customization expresses this property through the requirement that it provide an `is_unque()` method.  Many algorithms are difficult or impossible to implement on general non-unique layouts.  However, in the simple case of `scale()` the algorithm *could* be implemented for any layout that is simply *contiguous* by viewing the codomain of the layout as a one-dimensional `mdspan` and scaling each item that way.  Contiguousness is expressed through the requirement of an `is_contiguous()` method, and the size of the codomain is expressed through the `required_span_size()` required method. Similarly, as previously observed, many existing implementations (such as the BLAS) can specially handle any layout with regular strides; layout mappings can express whether they are strided using the `is_strided()` method.  Finally, all of these aspects need to be expressable statically and dynamically, so for layout mappings where the uniqueness, stridedness, and continguousness are consistently `true` for all instances of the type, the `is_always_unique()`, `is_always_strided()`, and `is_always_contiguous()` hooks are provided in the concept.  These requirements allow, for instance, algorithms that cannot support layouts lacking certain properties to fail at compile time rather than runtime.  The requirements on the `LayoutMapping` concept are summarized in table \ref{layoutreqs}.
+In addition to similarities, it is also instructive to look at what differences these layout mappings may introduce, which some algorithms may not be generic over.  In general, as many previous researchers have noted [CITATIONNEEDED], the design of generic concepts for customization typically begins with the algorithms, not the data structures.  Much of the design of `LayoutMapping` can be motivated with some very simple algorithms.  Consider an algorithm, `scale()`, that takes an `mdspan` and a scalar and multiplies each entry, in place, by the scalar.  For brevity, we will only consider the two-dimensional case here (though much of this motivation can be done even in the one-dimensional case).  If such an algorithm is to be implemented in the simplest possible way---iterating over the rows and column indices and scaling each element---the implementation would fail to meet the semantic requirements of the algorithm for symmetric layouts, since non-diagonal entries reference the same memory.  Thus, it is necessary for certain algorithms to know whether each multi-index in the domain maps to a unique offset in the codomain (the space of all offsets that the mapping can result in).  (An example of an algorithm for which this requirement is *not* needed is `dot_product()`.)  The `LayoutMapping` customization expresses this property through the requirement that it provide an `is_unque()` method.  Many algorithms are difficult or impossible to implement on general non-unique layouts.  However, in the simple case of `scale()` the algorithm *could* be implemented for any layout that is simply *contiguous* by viewing the codomain of the layout as a one-dimensional `mdspan` and scaling each item that way.  Contiguousness is expressed through the requirement of an `is_contiguous()` method, and the size of the codomain is expressed through the `required_span_size()` required method. Similarly, as previously observed, many existing implementations (such as the BLAS) can specially handle any layout with regular strides; layout mappings can express whether they are strided using the `is_strided()` method.  Finally, all of these aspects need to be expressible statically and dynamically, so for layout mappings where the uniqueness, stridedness, and continguousness are consistently `true` for all instances of the type, the `is_always_unique()`, `is_always_strided()`, and `is_always_contiguous()` hooks are provided in the concept.  These requirements allow, for instance, algorithms that cannot support layouts lacking certain properties to fail at compile time rather than runtime.  The requirements on the `LayoutMapping` concept are summarized in table \ref{layoutreqs}.
 
 
 ```{=latex}
