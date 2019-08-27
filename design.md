@@ -56,8 +56,19 @@ for(int row = 0; row < my_mat.extent(0); row++)
     my_mat(row, col) *= 2.0;
 ```
 
-As `std::string` is actually a C++ alias for `std::basic_string` so is `std::mdspan` an alias for `std::basic_mdspan`.
-Where `std::mdspan` only provides control over the scalar type and the extents, `std::basic_mdspan` exposed more customization points. 
+Arbitrary slices of an `mdspan` can be taken using the `subspan` function:
+
+```c++
+auto my_tens = mdspan<float, 3, 4, 5, 20>(data);
+auto my_mat = subspan(my_tens,
+  2, all, pair{2, 4}, 0
+);
+```
+
+The above snippet creates a 4 by 2 matrix sub-view of `my_tens` where the entries `i, j` correspond to index 2 in the first dimension of `my_tens`, index `i` in the second dimension, `j+2` in the third dimension, and `0` in the fourth dimension.  This relatively verbose syntax for slicing was preferred over other approaches because slicing needs can vary substantially across different domains and domain-specific syntax can quite easily be built on top of this verbose and explicit syntax.
+
+Just as `std::string` is actually a C++ alias for `std::basic_string` so is `std::mdspan` an alias for `std::basic_mdspan`.
+Whereas `std::mdspan` only provides control over the scalar type and the extents, `std::basic_mdspan` exposes more customization points. 
 It is templated on four parameters: the scalar type, the extents object, the layout and the accessor policy. 
 In the following we will describe these parameters and their utility in achieving higher performance or better portability. 
 

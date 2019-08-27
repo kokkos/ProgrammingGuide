@@ -34,7 +34,11 @@ class MicroBenchmark(DataPoint):
     @classmethod
     def load_all_from_json_output(cls, filename):
         file = open(filename)
-        benchmark = json.load(file)
+        try:
+            benchmark = json.load(file)
+        except:
+            print(f"Error loading json file {filename}")
+            raise
         rv = []
         assert("context" in benchmark)
         assert("benchmarks" in benchmark)
@@ -84,6 +88,10 @@ class host_name(InputVariable):
 
 @plottable_attribute
 class source_data_file(InputVariable):
+    pass
+
+@plottable_attribute
+class run_type(InputVariable):
     pass
 
 @plottable_attribute
@@ -157,20 +165,67 @@ class sum_3d_iter_order(InputVariable, Sum3DVariable):
             return "Right"
         elif "_left/" in dp.run_name:
             return "Left"
-
+        
 @plottable_variable
-class sum_3d_type_and_shape(InputVariable, Sum3DVariable):
-    label_x_axis = False
-    name = "  "
+class data_structure_type(InputVariable):
+    name = "Data Structure"
+    value_type = str
     
     def invalid_if(self, dp):
-        return Sum3DVariable().invalid_if(dp) or (re.search(r'(d?)(\d+)_(d?)(\d+)_(d?)(\d+)', dp.run_name) is None)
+        val = dp.run_name
+        return "MDSpan" not in val and "Raw_" not in val
+    
+    def get_value(self, dp):
+        val = dp.run_name
+        if "MDSpan" in val:
+            return 'mdspan'
+        elif "Raw_" in val:
+            return 'raw pointer'
+        else:
+            return None
+
+@plottable_variable
+class sum_3d_shape(InputVariable):
+    label_x_axis = False
+    name = "  "
+
+    def invalid_if(self, dp):
+        return re.search(r'(d?)(\d+)_(d?)(\d+)_(d?)(\d+)', dp.run_name) is None
 
     def get_value(self, dp):
         val = dp.run_name
         m = re.search(r'(d?)(\d+)_(d?)(\d+)_(d?)(\d+)', val)
         x, y, z = map(int, (m[2], m[4], m[6]))
-        assert(x == y and y == z)
+        return f"{x}x{y}x{z}"
+
+@plottable_variable
+class sum_3d_dynamicness(InputVariable):
+    label_x_axis = False
+    name = "  "
+
+    def invalid_if(self, dp):
+        return re.search(r'(d?)(\d+)_(d?)(\d+)_(d?)(\d+)', dp.run_name) is None
+
+    def get_value(self, dp):
+        val = dp.run_name
+        m = re.search(r'(d?)(\d+)_(d?)(\d+)_(d?)(\d+)', val)
+        xd, yd, zd = map(lambda v: "S" if v != "d" else "D", (m[1], m[3], m[5]))
+        if data_structure_type(dp) == "raw pointer":
+            if "Static" not in val:
+                xd, yd, zd = "D", "D", "D"
+        return f"{xd}x{yd}x{zd}"
+
+@plottable_variable
+class sum_3d_type_and_shape(InputVariable):
+    label_x_axis = False
+    name = "  "
+    
+    def invalid_if(self, dp):
+        return re.search(r'(d?)(\d+)_(d?)(\d+)_(d?)(\d+)', dp.run_name) is None
+
+    def get_value(self, dp):
+        val = dp.run_name
+        m = re.search(r'(d?)(\d+)_(d?)(\d+)_(d?)(\d+)', val)
         xd, yd, zd = map(lambda v: "S" if v != "d" else "D", (m[1], m[3], m[5]))
         if "MDSpan" in val:
             run_type = 'mdspan'
@@ -208,6 +263,47 @@ class compiler(InputVariable):
                 return f"{cname} {m[2]}"
         return "<unknown>"
 
+@plottable_variable
+class raw_vs_mdspan_plot_test_type(InputVariable):
+    name = "Benchmark"
+    value_type = str
+
+    def get_value(self, dp):
+        bm = None
+        elaboration = ""
+        if "Sum_3D_right" in run_name(dp):
+            if sum_3d_dynamicness(dp) == "DxDxD" \
+                    and compiler(dp) == "intel-18.0.5":
+                if sum_3d_layout(dp) == "Right" or data_structure_type(dp) == "raw pointer":
+                    bm = "Sum3D"
+                    elaboration = "\nSerial"
+        elif "Stencil_3D/right_" in run_name(dp):
+            if sum_3d_dynamicness(dp) == "DxDxD" and compiler(dp) == "cuda-10.1_gcc-5.3.0":
+                bm = "Stencil3D"
+                elaboration = "\nCuda"
+        elif "Stencil_3D_right/size_" in run_name(dp):
+            if compiler(dp) == "cuda-10.1_gcc-5.3.0":
+                bm = "Stencil3D"
+                elaboration = "\nCuda"
+        elif "TinyMatrixSum" in run_name(dp):
+            if data_structure_type(dp) == "mdspan" or "_right/" in run_name(dp):
+                if sum_3d_layout(dp) == "Right" or data_structure_type(dp) == "raw pointer":
+                    if compiler(dp) == "intel-18.0.5":
+                        if sum_3d_dynamicness(dp) == "DxDxD":
+                            bm = "TinyMatrixSum"
+                            elaboration = "\nOpenMP"
+                        elif sum_3d_dynamicness(dp) == "SxSxS":
+                            bm = "TinyMatrixSum"
+                            elaboration = "\nStatic Bounds,\nOpenMP"
+        if bm is not None:
+            return f"{bm}\n{sum_3d_shape(dp)}{elaboration}"
+        else:
+            return "<unknown>"
+        
+            
+
+
+
 
 if __name__ == "__main__":
     data = []
@@ -216,107 +312,142 @@ if __name__ == "__main__":
 
     plot_sum_3d_cuda = False
     plot_sum_3d_left_right_apollo = False
+    plot_sums = False
+    #================================================================================
+    if plot_sums:
     #================================================================================
 
-    if plot_sum_3d_cuda:
-        for size in (80, 400):
-          fig, ax = plt.subplots(nrows=1, ncols=1,
-              subplotpars=SubplotParams(
-                  left=0.11,
-                  right=0.87,
-                  bottom=0.2
+        if plot_sum_3d_cuda:
+            for size in (80, 400):
+              fig, ax = plt.subplots(nrows=1, ncols=1,
+                  subplotpars=SubplotParams(
+                      left=0.11,
+                      right=0.87,
+                      bottom=0.2
+                  )
               )
-          )
-          s = get_series(data,
-              series_variable=sum_3d_layout,
-              x_variable=sum_3d_type_and_shape,
-              y_variable=execution_time,
-              include_only=(
-                  (sum_3d_size == size*size*size) 
-                  & (sum_3d_iter_order == "Cuda")
-                  & (source_data_file.contains("cuda-10.1"))
-                  & (source_data_file.contains("apollo"))
-              ),
-              warn_if_different=(host_name,),
-          )
-          fig = bar_plot(
-              s,
-              legend=True,
-              error_bars=True,
-              fig=fig, ax=ax,
-          ).figure
-          fig.suptitle(f"Sum3D Benchmark ({size}x{size}x{size})\nCuda 10.1, V100  ")
-          fig.savefig(f"{my_directory}/figures/cuda_{size}_sum3d.pdf")
+              s = get_series(data,
+                  series_variable=sum_3d_layout,
+                  x_variable=sum_3d_type_and_shape,
+                  y_variable=execution_time,
+                  include_only=(
+                      (sum_3d_size == size*size*size) 
+                      & (sum_3d_iter_order == "Cuda")
+                      & (source_data_file.contains("cuda-10.1"))
+                      & (source_data_file.contains("apollo"))
+                  ),
+                  warn_if_different=(host_name,),
+              )
+              fig = bar_plot(
+                  s,
+                  legend=True,
+                  error_bars=True,
+                  fig=fig, ax=ax,
+              ).figure
+              fig.suptitle(f"Sum3D Benchmark ({size}x{size}x{size})\nCuda 10.1, V100  ")
+              fig.savefig(f"{my_directory}/figures/cuda_{size}_sum3d.pdf")
 
-    #================================================================================
+        #================================================================================
 
-    if plot_sum_3d_left_right_apollo:
-        for size in (20, 200):
-            for cmp, nice_name in {
-              "intel-17.0.1_opt" : "ICC 17.0.1",
-              "gcc-5.3.0" : "GCC 5.3.0"
-            }.items():
-                fig, ax = plt.subplots(nrows=1, ncols=1,
-                    subplotpars=SubplotParams(
-                        left=0.11,
-                        right=0.87,
-                        bottom=0.2
+        if plot_sum_3d_left_right_apollo:
+            for size in (20, 200):
+                for cmp, nice_name in {
+                  "intel-17.0.1_opt" : "ICC 17.0.1",
+                  "gcc-5.3.0" : "GCC 5.3.0"
+                }.items():
+                    fig, ax = plt.subplots(nrows=1, ncols=1,
+                        subplotpars=SubplotParams(
+                            left=0.11,
+                            right=0.87,
+                            bottom=0.2
+                        )
                     )
+                    s = get_series(data,
+                        series_variable=sum_3d_layout,
+                        x_variable=sum_3d_type_and_shape,
+                        y_variable=execution_time,
+                        include_only=(
+                            (sum_3d_size == size*size*size)
+                            & (sum_3d_iter_order == "Right")
+                            & (source_data_file.contains(cmp))
+                            & (source_data_file.contains("apollo"))
+                        ),
+                        warn_if_different=(host_name,),
+                    )
+                    fig = bar_plot(
+                        s,
+                        legend=True,
+                        error_bars=True,
+                        fig=fig, ax=ax,
+                    ).figure
+                    fig.suptitle(f"Sum3D Benchmark ({size}x{size}x{size})\nApollo Serial ({nice_name})")
+                    fig.savefig(f"{my_directory}/figures/apollo_{cmp}_{size}_sum3d.pdf")
+                    
+        #================================================================================
+
+        for size in (20, 200):
+            fig, ax = plt.subplots(nrows=1, ncols=1,
+                subplotpars=SubplotParams(
+                    left=0.11,
+                    right=0.87,
+                    bottom=0.2
                 )
-                s = get_series(data,
-                    series_variable=sum_3d_layout,
-                    x_variable=sum_3d_type_and_shape,
-                    y_variable=execution_time,
-                    include_only=(
+            )
+            s = get_series(data,
+                series_variable=compiler,
+                x_variable=sum_3d_type_and_shape,
+                y_variable=execution_time,
+                include_only=(
                         (sum_3d_size == size*size*size)
                         & (sum_3d_iter_order == "Right")
-                        & (source_data_file.contains(cmp))
-                        & (source_data_file.contains("apollo"))
-                    ),
-                    warn_if_different=(host_name,),
-                )
-                fig = bar_plot(
-                    s,
-                    legend=True,
-                    error_bars=True,
-                    fig=fig, ax=ax,
-                ).figure
-                fig.suptitle(f"Sum3D Benchmark ({size}x{size}x{size})\nApollo Serial ({nice_name})")
-                fig.savefig(f"{my_directory}/figures/apollo_{cmp}_{size}_sum3d.pdf")
-                
-    #================================================================================
-
-    for size in (20, 200):
-        fig, ax = plt.subplots(nrows=1, ncols=1,
-            subplotpars=SubplotParams(
-                left=0.11,
-                right=0.87,
-                bottom=0.2
+                        & (sum_3d_layout == "Right")
+                        & (~compiler.contains("cuda"))
+                        #& (source_data_file.contains("apollo"))
+                ),
+                warn_if_different=(host_name,),
             )
+            print_series_summary(s,
+                [var for var in globals().values() if isinstance(var, InputVariable) and not var is source_data_file]
+            )
+            fig = bar_plot(
+                s,
+                legend=True,
+                error_bars=True,
+                fig=fig, ax=ax,
+            ).figure
+            fig.suptitle(f"Sum3D Benchmark, Layout Right,\n({size}x{size}x{size})")
+            fig.savefig(f"{my_directory}/figures/apollo_layout_right_{size}_sum3d.pdf")
+    #================================================================================
+    fig, ax = plt.subplots(nrows=1, ncols=1,
+        subplotpars=SubplotParams(
+            left=0.11,
+            right=0.87,
+            bottom=0.3
         )
-        s = get_series(data,
-            series_variable=compiler,
-            x_variable=sum_3d_type_and_shape,
-            y_variable=execution_time,
-            include_only=(
-                    (sum_3d_size == size*size*size)
-                    & (sum_3d_iter_order == "Right")
-                    & (sum_3d_layout == "Right")
-                    & (~compiler.contains("cuda"))
-                    #& (source_data_file.contains("apollo"))
-            ),
-            warn_if_different=(host_name,),
+    )
+    s = get_series(data,
+        series_variable=data_structure_type,
+        x_variable=raw_vs_mdspan_plot_test_type,
+        y_variable=execution_time,
+        normalize_by=(data_structure_type == "raw pointer"),
+        include_only=(
+            (raw_vs_mdspan_plot_test_type != "<unknown>")
+            & (run_type != "aggregate")
         )
-        print_series_summary(s,
-            [var for var in globals().values() if isinstance(var, InputVariable) and not var is source_data_file]
-        )
-        fig = bar_plot(
-            s,
-            legend=True,
-            error_bars=True,
-            fig=fig, ax=ax,
-        ).figure
-        fig.suptitle(f"Sum3D Benchmark, Layout Right,\n({size}x{size}x{size})")
-        fig.savefig(f"{my_directory}/figures/apollo_layout_right_{size}_sum3d.pdf")
-
-
+    )
+    print_series_summary(s,
+        [var for var in globals().values() if isinstance(var, InputVariable) and not var is source_data_file]
+    )
+    for ser in s.values():
+        ser.y_variable.name = "Time (normalized)"
+    
+    fig = bar_plot(
+        s,
+        legend=True,
+        error_bars=True,
+        fig=fig, ax=ax,
+        xticklabels_keywords=dict(rotation=90)
+    ).figure
+    #ax.set_ylim(0.75, 1.25)
+    fig.suptitle(f"Summary of Selected Benchmarks")
+    fig.savefig(f"{my_directory}/figures/raw_vs_mdspan_normalized.pdf")
