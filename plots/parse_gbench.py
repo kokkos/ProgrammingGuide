@@ -1,4 +1,4 @@
-from os.path import split, join as path_join, abspath, dirname
+from os.path import split, join as path_join, abspath, dirname, basename
 my_directory = dirname(abspath(__file__))
 
 import sys
@@ -7,6 +7,7 @@ import json
 import attr
 from glob import glob
 import re
+import shutil
 
 from plotting.plottable import *
 from plotting.plotters.bar_plot import bar_plot
@@ -38,12 +39,14 @@ class MicroBenchmark(DataPoint):
             benchmark = json.load(file)
         except:
             print(f"Error loading json file {filename}")
-            raise
+            shutil.move(filename, f"{dirname(filename)}/broken/{basename(filename)}")
+            return None
         rv = []
         assert("context" in benchmark)
         assert("benchmarks" in benchmark)
         for b in benchmark["benchmarks"]:
-            rv.append(cls.from_json(b, benchmark["context"]))
+            if b["run_type"] != "aggregate":
+                rv.append(cls.from_json(b, benchmark["context"]))
         for m in rv:
             setattr(m, "source_data_file", filename)
         return rv
@@ -65,6 +68,12 @@ class OutputVariable(Variable):
 class cpu_time(OutputVariable):
     name = "Time"
     value_type = float
+
+
+@plottable_attribute
+class real_time(OutputVariable):
+    name = "Time"
+    value_type = float
     
 @plottable_attribute
 class repeats(InputVariable):
@@ -73,7 +82,7 @@ class repeats(InputVariable):
     default_value = 1
 
 @plottable_derived_variable(
-    cpu_time / repeats / 1000
+    real_time / repeats / 1000
 )
 class execution_time(OutputVariable):
     name = "Time (us)"
@@ -168,7 +177,7 @@ class sum_3d_iter_order(InputVariable, Sum3DVariable):
         
 @plottable_variable
 class data_structure_type(InputVariable):
-    name = "Data Structure"
+    name = ""
     value_type = str
     
     def invalid_if(self, dp):
@@ -265,7 +274,7 @@ class compiler(InputVariable):
 
 @plottable_variable
 class raw_vs_mdspan_plot_test_type(InputVariable):
-    name = "Benchmark"
+    name = ""
     value_type = str
 
     def get_value(self, dp):
@@ -277,42 +286,49 @@ class raw_vs_mdspan_plot_test_type(InputVariable):
                 if sum_3d_layout(dp) == "Right" or data_structure_type(dp) == "raw pointer":
                     bm = "Sum3D"
                     elaboration = "\nSerial"
-        elif "Stencil_3D/right_" in run_name(dp):
-            if sum_3d_dynamicness(dp) == "DxDxD" and compiler(dp) == "cuda-10.1_gcc-5.3.0":
-                bm = "Stencil3D"
-                elaboration = "\nCuda"
-        elif "Stencil_3D_right/size_" in run_name(dp):
-            if compiler(dp) == "cuda-10.1_gcc-5.3.0":
-                bm = "Stencil3D"
-                elaboration = "\nCuda"
+        elif "Stencil_3D_right" in run_name(dp) or "Stencil_3D/right_" in run_name(dp):
+            if sum_3d_dynamicness(dp) == "DxDxD":
+                if compiler(dp) == "cuda-10.1_gcc-5.3.0":
+                    bm = "Stencil3D"
+                    elaboration = "\nCuda"
+                elif compiler(dp) == "gcc-8.2.0" and "OpenMP" not in run_name(dp):
+                    bm = "Stencil3D"
+                    elaboration = "\nSerial (GCC)"
         elif "TinyMatrixSum" in run_name(dp):
-            if data_structure_type(dp) == "mdspan" or "_right/" in run_name(dp):
-                if sum_3d_layout(dp) == "Right" or data_structure_type(dp) == "raw pointer":
-                    if compiler(dp) == "intel-18.0.5":
-                        if sum_3d_dynamicness(dp) == "DxDxD":
+            if (data_structure_type(dp) == "mdspan" or "_right/" in run_name(dp)) \
+                    and (sum_3d_layout(dp) == "Right" or data_structure_type(dp) == "raw pointer"):
+                if "noloop" not in run_name(dp):
+                    if sum_3d_dynamicness(dp) == "DxDxD":
+                        if "OpenMP" in run_name(dp) and compiler(dp) == "intel-18.0.5":
                             bm = "TinyMatrixSum"
                             elaboration = "\nOpenMP"
-                        elif sum_3d_dynamicness(dp) == "SxSxS":
+                        elif compiler(dp) == "gcc-8.2.0" and "OpenMP" not in run_name(dp):
                             bm = "TinyMatrixSum"
-                            elaboration = "\nStatic Bounds,\nOpenMP"
+                            elaboration = "\nSerial (GCC)"
+                    elif sum_3d_dynamicness(dp) == "SxSxS":
+                        if "OpenMP" in run_name(dp) and compiler(dp) == "intel-18.0.5":
+                            bm = "TinyMatrixSum"
+                            elaboration = " (Static)\nOpenMP"
+                        if "OpenMP" not in run_name(dp) and compiler(dp) == "gcc-8.2.0":
+                            bm = "TinyMatrixSum"
+                            elaboration = " (Static)\nSerial (GCC)"
         if bm is not None:
-            return f"{bm}\n{sum_3d_shape(dp)}{elaboration}"
+            return f"{bm}\n{sum_3d_shape(dp).replace('1000000', '1M')}{elaboration}"
         else:
             return "<unknown>"
         
-            
-
-
-
-
 if __name__ == "__main__":
     data = []
     for f in glob(f"{data_dir}/*.json"):
-        data.extend(MicroBenchmark.load_all_from_json_output(f))
+        file_data = MicroBenchmark.load_all_from_json_output(f)
+        if file_data is not None:
+            data.extend(file_data)
+        
 
     plot_sum_3d_cuda = False
     plot_sum_3d_left_right_apollo = False
     plot_sums = False
+    make_overview_figure = True
     #================================================================================
     if plot_sums:
     #================================================================================
@@ -418,36 +434,39 @@ if __name__ == "__main__":
             fig.suptitle(f"Sum3D Benchmark, Layout Right,\n({size}x{size}x{size})")
             fig.savefig(f"{my_directory}/figures/apollo_layout_right_{size}_sum3d.pdf")
     #================================================================================
-    fig, ax = plt.subplots(nrows=1, ncols=1,
-        subplotpars=SubplotParams(
-            left=0.11,
-            right=0.87,
-            bottom=0.3
+    # "Overview" figure
+    if make_overview_figure:
+        fig, ax = plt.subplots(nrows=1, ncols=1,
+            subplotpars=SubplotParams(
+                left=0.09,
+                right=0.95,
+                bottom=0.35
+            ),
+            figsize=[7.0, 3.2]
         )
-    )
-    s = get_series(data,
-        series_variable=data_structure_type,
-        x_variable=raw_vs_mdspan_plot_test_type,
-        y_variable=execution_time,
-        normalize_by=(data_structure_type == "raw pointer"),
-        include_only=(
-            (raw_vs_mdspan_plot_test_type != "<unknown>")
-            & (run_type != "aggregate")
+        s = get_series(data,
+            series_variable=data_structure_type,
+            x_variable=raw_vs_mdspan_plot_test_type,
+            y_variable=execution_time,
+            normalize_by=(data_structure_type == "raw pointer"),
+            include_only=(
+                (raw_vs_mdspan_plot_test_type != "<unknown>")
+                & (run_type != "aggregate")
+            )
         )
-    )
-    print_series_summary(s,
-        [var for var in globals().values() if isinstance(var, InputVariable) and not var is source_data_file]
-    )
-    for ser in s.values():
-        ser.y_variable.name = "Time (normalized)"
-    
-    fig = bar_plot(
-        s,
-        legend=True,
-        error_bars=True,
-        fig=fig, ax=ax,
-        xticklabels_keywords=dict(rotation=90)
-    ).figure
-    #ax.set_ylim(0.75, 1.25)
-    fig.suptitle(f"Summary of Selected Benchmarks")
-    fig.savefig(f"{my_directory}/figures/raw_vs_mdspan_normalized.pdf")
+        print_series_summary(s,
+            [var for var in globals().values() if isinstance(var, InputVariable) and not var is source_data_file]
+        )
+        for ser in s.values():
+            ser.y_variable.name = "Time (normalized)"
+        
+        fig = bar_plot(
+            s,
+            legend=True,
+            error_bars=True,
+            fig=fig, ax=ax,
+            xticklabels_keywords=dict(rotation=90, fontdict=dict(fontsize=8.5), family="serif")
+        ).figure
+        #ax.set_ylim(0.75, 1.25)
+        fig.suptitle(f"Summary of Selected Benchmarks")
+        fig.savefig(f"{my_directory}/figures/raw_vs_mdspan_normalized.pdf")
