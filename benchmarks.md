@@ -2,7 +2,16 @@
 Benchmarks
 ==========
 
-Figure \ref{rawvsmdspan} shows a normalized comparison of `mdspan` versions of several selected benchmarks with the same benchmark expressed with raw pointers.  A more thorough elaboration follows.  Most of the benchmarks showed overheads within the measurement noise, and no benchmarks showed overhead greater than 10%. Examination of generated assembly (and, at least in the case of the Intel compiler, optimization reports) indicates similar---usually identical---vectorization of the `mdspan` and raw pointer versions of our benchmarks.
+```{=latex}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{figures/raw_vs_mdspan_normalized.pdf}
+\caption{An overview of selected benchmark comparisons of mdspan and raw pointer performance.  Each benchmark is normalized to the average execution time of the raw pointer case.  Details of each of these benchmarks are described in the text.}
+\label{raw-vs-mdspan-overview}
+\end{figure*}
+```
+
+Figure \ref{raw-vs-mdspan-overview} shows a normalized comparison of `mdspan` versions of several selected benchmarks with the same benchmark expressed with raw pointers.  A more thorough elaboration follows.  Most of the benchmarks showed overheads within the measurement noise, and no benchmarks showed overhead greater than 10%. Examination of generated assembly (and, at least in the case of the Intel compiler, optimization reports) indicates similar---usually identical---vectorization of the `mdspan` and raw pointer versions of our benchmarks.
 
 Methodology
 -----------
@@ -29,4 +38,22 @@ This benchmark performs the same operations as the `Sum3D` benchmark, but uses t
 
 TODO write this
 
+Results: Compiler Comparison
+----------------------------
 
+TODO
+
+Results: Effect of Layout Abstraction
+-------------------------------------
+
+TODO
+
+Results: Overhead of `subspan`
+------------------------------
+
+TODO
+
+Results: Effects of Newer C++ Standards
+---------------------------------------
+
+TODO

@@ -18,6 +18,7 @@ from matplotlib import pyplot as plt
 
 data_dir = "/Users/dshollm/Projects/mdspan/etc/p3hpc-19-paper/plots/data"
 
+
 class MicroBenchmark(DataPoint):
     
     def __init__(self, **kwargs):
@@ -323,12 +324,21 @@ if __name__ == "__main__":
         file_data = MicroBenchmark.load_all_from_json_output(f)
         if file_data is not None:
             data.extend(file_data)
-        
 
+
+    use_paper_figure_style = True
     plot_sum_3d_cuda = False
     plot_sum_3d_left_right_apollo = False
     plot_sums = False
     make_overview_figure = True
+
+    #================================================================================
+    # paper figure style
+    if use_paper_figure_style:
+        plt.rc('font', family="serif")
+        plt.rc('legend', fontsize="small", framealpha=1.0)
+
+
     #================================================================================
     if plot_sums:
     #================================================================================
@@ -339,7 +349,7 @@ if __name__ == "__main__":
                   subplotpars=SubplotParams(
                       left=0.11,
                       right=0.87,
-                      bottom=0.2
+                      bottom=0.15
                   )
               )
               s = get_series(data,
@@ -440,9 +450,9 @@ if __name__ == "__main__":
             subplotpars=SubplotParams(
                 left=0.09,
                 right=0.95,
-                bottom=0.35
+                bottom=0.32
             ),
-            figsize=[7.0, 3.2]
+            figsize=[7.0, 3.0]
         )
         s = get_series(data,
             series_variable=data_structure_type,
@@ -465,7 +475,8 @@ if __name__ == "__main__":
             legend=True,
             error_bars=True,
             fig=fig, ax=ax,
-            xticklabels_keywords=dict(rotation=90, fontdict=dict(fontsize=8.5), family="serif")
+            xticklabels_keywords=dict(rotation=90, fontdict=dict(fontsize=7), family="serif"),
+            yticklabels_text_keywords=dict(fontsize=7, family="serif"),
         ).figure
         #ax.set_ylim(0.75, 1.25)
         fig.suptitle(f"Summary of Selected Benchmarks")

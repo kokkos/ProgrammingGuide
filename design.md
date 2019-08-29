@@ -100,7 +100,7 @@ In addition to similarities, it is also instructive to look at what differences 
 
 ## Accessor abstraction
 
-After several design iterations,[CITEP0900] the authors realized that many of the remaining customizations could be encapsulated in the answer to one question: how should the implementation turn an instance of some pointer type and an offset (obtained from the `LayoutMapping` abstraction) into an instance of some reference type? The `AccessPolicy` customization point is designed to provide all of the necessary flexibility in the answer to this question.  Our exploration in this space began with a couple of specific use cases: a non-aliasing `AccessPolicy`, similar to the `restrict` keyword in C,[CITATIONNEEDED] and an atomic `AccessPolicy`, where operations on the resulting reference use atomic operations.   The former needs to customize the pointer type to include implementation-specific annotations (usually some variant of the C-style `restrict` keyword) that indicate the pointer does not alias pointers derived from other sources within the same context (usually a function scope).  The latter needs to customize the reference type produced by the dereference operation to have it return a `std::atomic_ref<T>`.  (`std::atomic_ref<T>` was merged into the C++ standard working draft during the C++20 cycle, and will likely be officially approved as part of the C++20 balloting process when that process completes sometime in 2020.[CITEP0019]) These requirements immediately led us to include customizable `reference` and `pointer` type names as part of the `AccessPolicy` concept.  Marrying these two customizations could take several forms; one possibility is to have a function that simply takes a `pointer` and returns a `reference`.  However, this requires the `pointer` type to be arbitrarily offsettable---e.g., using `operator+()` or `std::advance`.  A simpler approach that removes this requirement is to have a customization point that takes the `pointer` and an offset and returns the `reference` directly.  We chose the latter in order to simplify the requirements on the `pointer` type, and named this required method `access`.
+After several design iterations,[CITEP0900] the authors came to the conclusion that many of the remaining customizations could be encapsulated in the answer to one question: how should the implementation turn an instance of some pointer type and an offset (obtained from the `LayoutMapping` abstraction) into an instance of some reference type? The `AccessPolicy` customization point is designed to provide all of the necessary flexibility in the answer to this question.  Our exploration in this space began with a couple of specific use cases: a non-aliasing `AccessPolicy`, similar to the `restrict` keyword in C,[CITATIONNEEDED] and an atomic `AccessPolicy`, where operations on the resulting reference use atomic operations.   The former needs to customize the pointer type to include implementation-specific annotations (usually some variant of the C-style `restrict` keyword) that indicate the pointer does not alias pointers derived from other sources within the same context (usually a function scope).  The latter needs to customize the reference type produced by the dereference operation to have it return a `std::atomic_ref<T>`.  (`std::atomic_ref<T>` was merged into the C++ standard working draft during the C++20 cycle, and will likely be officially approved as part of the C++20 balloting process when that process completes sometime in 2020.[CITEP0019]) These requirements immediately led us to include customizable `reference` and `pointer` type names as part of the `AccessPolicy` concept.  Marrying these two customizations could take several forms; one possibility is to have a function that simply takes a `pointer` and returns a `reference`.  However, this requires the `pointer` type to be arbitrarily offsettable---e.g., using `operator+()` or `std::advance`.  A simpler approach that removes this requirement is to have a customization point that takes the `pointer` and an offset and returns the `reference` directly.  We chose the latter in order to simplify the requirements on the `pointer` type, and named this required method `access`.
 
 The issue of offsetting a `pointer` to create another `pointer`, while not necessarily separable from the creation of a `reference`, is nonetheless also a concern that `AccessPolicy` needs to address for the implementation of the `subspan()` function.  We named this customization with a required method `offset`.  The type of the `pointer` retrieved when arbitrarily offsetting a `pointer` type may not necessarily match the input pointer type---for instance, in the case of an overaligned pointer type used for easy vectorization, a pointer derived from an arbitrary (runtime) offset to this pointer cannot guarantee the preservation of this alignment.  Thus, the `AccessPolicy` is allowed to provide a different `AccessPolicy`, named with the required type name `offset_policy`, that differs in type from itself (and thus, for instance, may differ in its `pointer` type).  Finally, given an arbitrary `pointer` type, the current design requires the ability to "decay" this type into an "ordinary" C++ pointer for compatibility with `std::span`, which does not support `pointer` type customization.  The requirements on the `AccessPolicy` concept are summarized in table \ref{accessreqs}.
 
@@ -114,3 +114,70 @@ The issue of offsetting a `pointer` to create another `pointer`, while not neces
 \end{center}
 \end{table}
 ```
+
+### Accessor Use Case: Non-aliasing Semantics
+
+As a concrete example, the (trivial) `AccessorPolicy` required to express non-aliasing semantics (similar to the `restrict` keyword and supported in many C++ compilers as `__restrict`) is shown in figure \ref{restrict-accessor}.  This differs from the default accessor (`std::accessor_basic<T>`) only in the definition of the nested type `pointer`.  Interestingly, because the design of `mdspan` requires the `pointer` to be used as a parameter (in `access`) before it is ever turned into a reference, `mdspan` is able to skirt the well-known issues surrounding the meaning of the `restrict` qualifier on a data member of a struct.[CITATIONNEEDED?]
+
+```{=latex}
+\begin{figure}
+```
+```c++
+template <class T>
+struct RestrictAccessor {
+  using element_type = T;
+  using pointer = T* __restrict;
+  using reference = T&;
+  reference access(pointer p, ptrdiff_t i)
+    const noexcept
+  { return p[i]; }
+  pointer offset(pointer p, ptrdiff_t i)
+    const noexcept
+  { return p + i; }
+};
+```
+```{=latex}
+\caption{An AccessorPolicy that provides an expression of non-aliasing semantics for mdspan.}
+\label{restrict-accessor}
+\end{figure}
+```
+
+
+### Accessor Use Case: Atomic Access
+
+Frequently in HPC applications, it is necessary to access a region of memory atomically for only a small portion of its lifetime.  Constructing the entity to be atomic for the entire lifetime of the underlying memory, as is done with `std::atomic`, may have unacceptable overhead for many HPC use cases.  As an entity that references a region of memory for a subset of that memory's lifetime, `mdspan` is ideally suited to be paired with a fancy reference type that expresses atomic semantics (that is, all operations on the underlying memory are to be performed atomically by the abstract machine).  With the introduction of `std::atomic_ref` in C++20, all that is needed is an accessor policy that customizes the reference type and provides an `access` method that constructs such a reference.  An implementation of such an `AccessorPolicy` is shown in figure \ref{atomic-accessor}.
+
+```{=latex}
+\begin{figure}
+```
+```c++
+template <class T>
+struct AtomicAccessor {
+  using element_type = T;
+  using pointer = T*;
+  using reference = atomic_ref<T>;
+  reference access(pointer p, ptrdiff_t i)
+    const noexcept
+  { return atomic_ref{ p[i] }; }
+  pointer offset(pointer p, ptrdiff_t i)
+    const noexcept
+  { return p + i; }
+};
+```
+```{=latex}
+\caption{An AccessorPolicy that provides an expression of non-aliasing semantics for mdspan.}
+\label{atomic-accessor}
+\end{figure}
+```
+
+
+### Accessor Use Case: Bit-packing
+
+Similar to the infamous `std::vector<bool>`, the accessor abstraction can be used to return a fancy reference type that reference an individual bits packed into the bytes of underlying memory.  (Unlike `std::vector<bool>`, though, `std::accessor_basic<bool>` does not do this by default).
+
+### Accessor Use Case: Strong Pointer Types for Heterogeneous Memory Spaces 
+
+Heterogeneity often requires a program to access multiple, potentially disjoint memory spaces.  Thus far, vendor-provided APIs for heterogeneity have tended to represent this memory with plain-old raw pointers.  An important emerging paradigm in modern programming model design is so-called "strong types" (also called "opaque typedefs" or "phantom types"),[CITATIONNEEDED] wherein meaning is opaquely attached to the form of the type (for instance, `distance<double>` and `temperature<double>` would be different concrete types with the same form as `double`).  Applied to heterogeneity, the paradigm would suggest replacing the `pointer` type with an opaque typedef indicating its compatibility, accessibility, and so on.  The ability to inject a pointer type into the existing logic of `mdspan` (as in the `RestrictAccessor` above) is thus critical for safety aspects of heterogeneous programming.
+
+
+
