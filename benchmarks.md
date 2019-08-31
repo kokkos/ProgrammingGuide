@@ -6,8 +6,7 @@ Benchmarks
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{figures/raw_vs_mdspan_normalized.pdf}
-\caption{An overview of selected benchmark comparisons of mdspan and raw pointer performance.  Each benchmark is normalized to the average execution time of the raw pointer case.  Details of each of these benchmarks are described in the text.}
-\label{raw-vs-mdspan-overview}
+\caption{An overview of selected benchmark comparisons of mdspan and raw pointer performance.  Each benchmark is normalized to the average execution time of the raw pointer case.  Details of each of these benchmarks are described in the text.} \label{raw-vs-mdspan-overview}
 \end{figure*}
 ```
 
@@ -41,6 +40,18 @@ TODO write this
 Results: Compiler Comparison
 ----------------------------
 
+```{=latex}
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/compiler_comparison.pdf}
+\caption{Comparison of overheads, relative to raw pointer implementations, of the serial versions of various benchmarks across different compilers.}
+\label{compiler-comparison}
+\end{figure}
+```
+
+Results: Effect of Static Extents
+---------------------------------
+
 TODO
 
 Results: Effect of Layout Abstraction
@@ -51,7 +62,14 @@ TODO
 Results: Overhead of `subspan`
 ------------------------------
 
-TODO
+```{=latex}
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/subspan_overhead_gcc_and_clang.pdf}
+\caption{Comparison of overheads, relative to raw pointer implementations, of the Subspan3D benchmark for GCC and Clang.}
+\label{subspan-gcc-and-clang}
+\end{figure}
+```
 
 Results: Effects of Newer C++ Standards
 ---------------------------------------
