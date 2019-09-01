@@ -89,7 +89,29 @@ for(ptrdiff_t i = 0; i < s.extent(0); ++i) {
 
 ### `MatVec` benchmark
 
-TODO write this
+
+The MatVec performs a matrix-vector multiply operation. It demonstrates the impact of layout choice on the performance. In particular if one employs simple parallelization strategies this is an important consideration for performance portability. Consider this serial implementation:
+
+```c++
+for(ptrdiff_t i = 0; i < A.extent(0); ++i) {
+  T y_i = 0;
+  for(ptrdiff_t j = 0; j < A.extent(1); ++j) {
+    y_i += A(i,j) * x(j);
+  }
+  y(i) = y_i;
+}
+```
+
+When parallelizing the outer loop via OpenMP, 
+C++17 standard parallel algorithms or CUDA the 
+optimal layout depends on the hardware. 
+On CPUs the compiler will vectorize the inner loop over 
+`j` and thus a unit-stride access on the second dimension 
+of `A` is optimal. On GPUs no implicit auto-parallelization 
+happens and thus the first dimension must be accessed with 
+a unit-stride. Being able to make this layout change in the 
+data type, means that the algorithm can stay the same across 
+different architectures. 
 
 Results: Compiler Comparison
 ----------------------------
@@ -113,7 +135,16 @@ TODO
 Results: Effect of Layout Abstraction
 -------------------------------------
 
-TODO discussion here
+The benchmark in Figure \ref{layout-matvec} was run on the ARM ThunderX2, Intel SkyLake, and NVIDIA TitanV 
+platforms using OpenMP parallelization for the 
+CPUs and CUDA for the GPU. On the CPU systems 
+using `layout_right` for the matrix provides 
+the better performance with `layout_left` being 
+3x-7x slower. On the GPU the `layout_left` version 
+achieves a 10x higher throughput. Figure TODO shows 
+the performance measured in algorithmic memory 
+throughput (i.e. count memory accesses in the 
+algorithm and divide by runtime).  
 
 ```{=latex}
 \begin{figure}[!ht]
