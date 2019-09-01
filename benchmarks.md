@@ -20,6 +20,16 @@ Methodology
 
 All benchmarks were prepared and executed using the Google Benchmark microbenchmarking support library.[CITATIONNEEDED]  CPU benchmarks were run on [TODO: DESCRIBE mutrino], and GPU benchmarks were run on [TODO: DESCRIBE apollo].  CPU benchmarks were compiled with GCC 8.2.0, Intel ICC 18.0.5, and Clang TODO.  GPU benchmarks were compiled with NVIDIA's NVCC version 10.1, using GCC 5.3.0 as the host compiler.  The source code of all benchmarks is available on the mdspan implementation repository that accompanies this paper (see Implementation section above).  A brief description of each benchmark is also included here for completeness.  These benchmarks tend to focus on the three dimensional use case (which we view as the smallest "relatively non-trivial" number of dimensions), but spot checks with larger numbers of dimensions---up to 10---yielded similar results and led to similar conclusions.
 
+```{=latex}
+\begin{table}[htbp]
+\caption{Test Systems and Software}
+\begin{center}
+\input{machine_table}
+\label{machines}
+\end{center}
+\end{table}
+```
+
 ### `Sum3D` Benchmark
 
 Intended as a "simplest possible" benchmark, this benchmark simply sums over all of the entries in a 3D `mdspan`.  The raw pointer version (as with all of the benchmarks) does the same thing, but uses hard-coded index arithmetic.  Both right-most fast-running and left-most fast-running loop structures and layouts were tested (and yielded similar results), and only the right layout, right loop structure results are discussed in this paper, for brevity.  The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output named `sum`, looks like:
