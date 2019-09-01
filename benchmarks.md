@@ -2,13 +2,14 @@
 Benchmarks
 ==========
 
-A common complaint about C++ abstractions in HPC is that they hinder compiler optimizations. While that was largely true in the past, a number of developments have improved the situation. More recent C++ standards introduce capabilities and constraints which help the compiler optimize code, and with the widespread adoption of C++ abstraction layers in industry significant work has gone into optimizing the commonly used compilers. To demonstrate that mdspan does not introduce overheads compared to using raw pointers with manual indexing we will show benchmark results generally both for the version using mdspan and an equivalent implementation using raw pointers.
+A common complaint about C++ abstractions in HPC is that they hinder compiler optimizations. While that was largely true in the past, a number of developments have improved the situation. More recent C++ standards introduce capabilities and constraints which help the compiler optimize code, and with the widespread adoption of C++ abstraction layers in industry significant work has gone into optimizing the commonly used compilers. To demonstrate that mdspan does not introduce overheads compared to using raw pointers with manual indexing we will show benchmark results generally both for the version using mdspan and an equivalent implementation using raw pointers.  Since the difference in most benchmarks is very small, most figures in this section show overhead of the `mdspan` version over the raw pointer variant. Negative overhead indicates cases where the `mdspan` version was faster.
 
 ```{=latex}
 \begin{figure*}[!ht]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/raw_vs_mdspan_normalized.pdf}
-\caption{An overview of selected benchmark comparisons of mdspan and raw pointer performance.  Each benchmark is normalized to the average execution time of the raw pointer case.  Details of each of these benchmarks are described in the text.} \label{raw-vs-mdspan-overview}
+\caption{An overview of selected benchmark comparisons of mdspan and raw pointer performance.  Each benchmark is normalized to the average execution time of the raw pointer case.  Details of each of these benchmarks are described in the text.}
+\label{raw-vs-mdspan-overview}
 \end{figure*}
 ```
 
