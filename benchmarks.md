@@ -90,15 +90,13 @@ for(ptrdiff_t i = 0; i < s.extent(0); ++i) {
 ### `MatVec` benchmark
 
 
-The MatVec performs a matrix-vector multiply operation. It demonstrates the impact of layout choice on the performance. In particular if one employs simple parallelization strategies this is an important consideration for performance portability. Consider this serial implementation:
+The `MatVec` benchmark performs a simple dense matrix-vector multiply operation; it is aimed at demonstrating the impact of layout choice on performance, particularly in the context of performance portability of parallization across diverse hardware platforms.  Consider this serial implementation:
 
 ```c++
 for(ptrdiff_t i = 0; i < A.extent(0); ++i) {
-  T y_i = 0;
   for(ptrdiff_t j = 0; j < A.extent(1); ++j) {
-    y_i += A(i,j) * x(j);
+    y(i) += A(i,j) * x(j);
   }
-  y(i) = y_i;
 }
 ```
 
@@ -140,10 +138,10 @@ platforms using OpenMP parallelization for the
 CPUs and CUDA for the GPU. On the CPU systems 
 using `layout_right` for the matrix provides 
 the better performance with `layout_left` being 
-3x-7x slower. On the GPU the `layout_left` version 
-achieves a 10x higher throughput. Figure TODO shows 
-the performance measured in algorithmic memory 
-throughput (i.e. count memory accesses in the 
+3x-7x slower. On the GPU, however, the `layout_left` version 
+achieves a 10x higher throughput. The results shown represent
+performance measured in terms algorithmic memory 
+throughput (i.e., count memory accesses in the 
 algorithm and divide by runtime).  
 
 ```{=latex}
