@@ -94,6 +94,8 @@ TODO write this
 Results: Compiler Comparison
 ----------------------------
 
+TODO discussion here
+
 ```{=latex}
 \begin{figure}[!ht]
 \centering
@@ -111,7 +113,16 @@ TODO
 Results: Effect of Layout Abstraction
 -------------------------------------
 
-TODO
+TODO discussion here
+
+```{=latex}
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=0.45\textwidth]{figures/matvec_figure.pdf}
+\caption{Comparison of absolute memory bandwidths for the MatVec benchmark with different memory layouts.}
+\label{layout-matvec}
+\end{figure}
+```
 
 Results: Overhead of `subspan`
 ------------------------------

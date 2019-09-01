@@ -72,6 +72,37 @@ Whereas `std::mdspan` only provides control over the scalar type and the extents
 It is templated on four parameters: the scalar type, the extents object, the layout and the accessor policy. 
 In the following we will describe these parameters and their utility in achieving higher performance or better portability. 
 
+## Extents Class Template
+
+In `basic_mdspan` the extents are provided via an `extents` class template.
+As with the `mdspan` alias template, the parameters are either static sizes or the
+`dynamic_extent` tag.
+
+```c++
+void some_function(float* data) {
+  auto my_matrix =
+    basic_mdspan<float, extents<20, dynamic_extent>>(
+      data, 40
+    );
+  /* ... */
+}
+```
+
+The ability to provide extents statically can help significantly
+with compiler optimizations. For example, a compiler may be able
+to completely unroll small inner loops if the extents are known
+at compile time. Knowing exact counts and sizes can also help
+with vectorization and the optimizer's cost model.
+A typical example of this in HPC is operations on a
+batch of small matrices or vectors, where the length of the
+dimensions is dictated by a physics property or the way the
+system was discretized (instead of the problem size).
+When this sort of problem interacts with generic code, such information
+would be lost unless static extents can be part of the `mdspan` type
+itself.  The `TinyMatrixSum` benchmark (below) provides a proxy
+for problems with this sort of behavior.
+
+
 ## Layout abstraction
 
 Modern C++ design requires library authors to orthogonalize certain aspects of the design into customization points that algorithms may be generic over.  The most commonplace example of this is the `Allocator` abstraction, which controls memory allocation for standard containers like `vector`.  Most algorithms on containers do not change regardless of how the underlying data is allocated, and the `Allocator` abstraction allows those algorithms to be generic over the form of memory allocation used by the container.  An example of one such aspect in the current context is the layout of the underlying data with respect to the multi-index domain.  While a high-quality-of-implementation matrix multiply would definitely specialize for different data layouts, the simplest possible implementation would only need to know how to get and store data associated with a given multi-index into the underlying memory.  This also describes the majority of use cases from the perspective of the caller of such algorithms, where only the semantics of a mathematical matrix multiply are needed regardless of data layout.  While the grouping of a single set of mathematical semantics under a common algorithm name (regardless of layout) does serve to reduce cognitive load for the writer and (particularly) the reader of the code, it can also serve as a conduit for performance portability.  The canonical example, again with reference to data layout, is the portability of access patterns in code that may run on a CPU or on a GPU.  GPUs need to coalesce accesses (that is, stride across execution agents) because of the vector nature of the underlying hardware, whereas CPUs want to maximize locality (that is, assign contiguous chunks to the same execution agent) in order to increase cache reuse.  It is easy to see that, with respect to matrix layout, for instance, these two are transposes of each other.
