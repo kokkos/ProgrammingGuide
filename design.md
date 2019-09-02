@@ -36,6 +36,9 @@ This code snippet also treats `data` as a 20 by 40 matrix, but the first of thes
 The design is greatly simplified by delegating the ownership and lifetime management of the data to orthogonal constructs.
 Thus, `mdspan` merely interprets existing memory as a multi-dimensional entity, leaving management of the underlying memory to the user.
 This follows a trend of similar constructs recently introduced to C++, such as `string_view`\cite{wg21_is_14882:2017, cppreference_string_view} and `span`\cite{wg21_is_14882:2020_cd, cppreference_span}.
+These constructs allow "API funnelling", which makes it easy for libraries to support user's own types instead of forcing users to use a specific type.
+Library interfaces can take `string_view`s or `mdspan`s, and library users can add interfaces to their own types that return a suitable `string_view` or `mdspan`.
+This design pattern enables easy adoption by existing codebases which have their own matrix types; because `mdspan` is non-owning, you can always create an `mdspan` that refers to a matrix owned by another object.
 Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are also non-owning entities which delegate lifetime management as a separate concern.[CITATIONNEEDED]
 
 References to entries in these matrices are obtained by giving a multi-index (that is, a set of indices) to `operator()` of the object, which has been overloaded for this purpose:
