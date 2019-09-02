@@ -4,13 +4,12 @@ Introduction
 
 Performance portability is one of the primary concerns of the high-performance computing (HPC) community\cite{DOEPPP}.
 Over the last decade in particular, numerous projects\cite{gridcpp2018,alpaka2016,occa2014,raja2014,kokkos2014} have tried to address various challenges associated with it. 
-The urgency and importance of finding solutions to performance portability concerns has recently increased significantly with the announcement of the first exascale platforms, which feature at least four different node designs - with more to come.
-<!-- TODO: Make the second half of this sentence more concise. -->
+With the recent announcement of the first exascale class platforms introducing architectures which were previously not deployed in the HPC community, 
+the urgency and importance of finding solutions to performance portability concerns has increased significantly.
 One of the projects which has found significant success in adoption is Kokkos,\cite{kokkos2014,kokkosgithub} a C++ performance-portable programming model originally developed at Sandia National Laboratories, but now maintained by a group spanning four United States National Laboratories as well as the Swiss National Supercomputing Centre. 
 
 Arguably the most significant innovation of the Kokkos project was its `View` data structure, a multi-dimensional array abstraction which addresses concerns of performance portability such as data layout and data access customization.
-<!-- TODO: Insert citation for "hundred HPC software projects", https://github.com/kokkos/kokkos/issues/1950, and make sure the numeric claim matches the citation. -->
-This array abstraction is now used at the heart of over a hundred HPC software projects[CITATIONNEEDED], and is proving to be critical for meeting the challenges of preparing codebases for the exascale era. 
+This array abstraction is now used at the heart of many HPC software projects\cite{kokkosprojects}, and is proving to be critical for meeting the challenges of preparing codebases for the exascale era. 
 While maintaining these capabilities in as an HPC-specific solution is workable for now, there are a number of reasons why it would be beneficial to have the core capabilities become part of international language standards.
 Doing so would enable tighter integration into other language and library capabilities, such as the proposed ISO C++ Linear Algebra library\cite{wg21_p1673}, make interface compatibility between different HPC products easier, and would further seamless integration with external products used in non-HPC-specific applications.
 For example, the proposed ISO C++ Audio library\cite{wg21_p1386} has expressed interest in using this abstraction.
