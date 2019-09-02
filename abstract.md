@@ -7,11 +7,11 @@ the ISO-C++ standard working draft early in the C++23 standardization cycle.
 The proposal is largely inspired by work done in the Kokkos project - a C++ programming model for
 Performance Portability deployed by numerous HPC institutions to prepare their code base for 
 the exascale class super computing systems. 
-This paper describes the final design of mdspan, after a 5-year process to achieve consensus in the
+This paper describes the final design of mdspan after a 5-year process to achieve consensus in the
 C++ community. 
-In particular we will lay out, how the design addresses some of the core challenges of performance portable 
+In particular we will lay out how the design addresses some of the core challenges of performance portable 
 programming, and how its customization point allow a seemless extension into areas not currently 
-addressed by the C++ standard, but which are of critical importance in the heterogeneous computing world of todays systems.
-Finally, we have provided a production-quality implementation of the proposal in its current (and likely final) form, 
+addressed by the C++ standard but which are of critical importance in the heterogeneous computing world of todays systems.
+Finally, we have provided a production-quality implementation of the proposal in its current form, 
 and this work includes several benchmarks of this implementation aimed at demonstrating the zero-overhead nature of the modern design.
 
