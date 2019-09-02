@@ -168,7 +168,7 @@ The requirements on the `LayoutMapping` concept are summarized in table \ref{lay
 ## Accessor abstraction
 
 After several design iterations,\cite{wg21_p0009} the authors came to the conclusion that many of the remaining customizations could be encapsulated in the answer to one question: how should the implementation turn an instance of some pointer type and an offset (obtained from the `LayoutMapping` abstraction) into an instance of some reference type? The `AccessPolicy` customization point is designed to provide all of the necessary flexibility in the answer to this question.
-Our exploration in this space began with a couple of specific use cases: a non-aliasing `AccessPolicy`, similar to the `restrict` keyword in C,[CITATIONNEEDED] and an atomic `AccessPolicy`, where operations on the resulting reference use atomic operations.
+Our exploration in this space began with a couple of specific use cases: a non-aliasing `AccessPolicy`, similar to the `restrict` keyword in C,\cite{c18standard} and an atomic `AccessPolicy`, where operations on the resulting reference use atomic operations.
  The former needs to customize the pointer type to include implementation-specific annotations (usually some variant of the C-style `restrict` keyword) that indicate the pointer does not alias pointers derived from other sources within the same context (usually a function scope).
 The latter needs to customize the reference type produced by the dereference operation to have it return a `std::atomic_ref<T>`.
 (`std::atomic_ref<T>` was merged into the C++ standard working draft during the C++20 cycle, and will likely be officially approved as part of the C++20 balloting process when that process completes sometime in 2020\cite{wg21_p0019}. These requirements immediately led us to include customizable `reference` and `pointer` type names as part of the `AccessPolicy` concept.
@@ -199,7 +199,7 @@ The requirements on the `AccessPolicy` concept are summarized in table \ref{acce
 
 As a concrete example, the (trivial) `AccessorPolicy` required to express non-aliasing semantics (similar to the `restrict` keyword and supported in many C++ compilers as `__restrict`) is shown in figure \ref{restrict-accessor}.
 This differs from the default accessor (`std::accessor_basic<T>`) only in the definition of the nested type `pointer`.
-Interestingly, because the design of `mdspan` requires the `pointer` to be used as a parameter (in `access`) before it is ever turned into a reference, `mdspan` is able to skirt the well-known issues surrounding the meaning of the `restrict` qualifier on a data member of a struct.[CITATIONNEEDED?]
+Interestingly, because the design of `mdspan` requires the `pointer` to be used as a parameter (in `access`) before it is ever turned into a reference, `mdspan` is able to skirt the well-known issues surrounding the meaning of the `restrict` qualifier on a data member of a struct.\cite{gcc_docs_restrict,msvc_docs_restrict,finkel2014restrict}
 
 ```{=latex}
 \begin{figure}[!h]
