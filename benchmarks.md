@@ -18,7 +18,9 @@ Figure \ref{raw-vs-mdspan-overview} shows a normalized comparison of `mdspan` ve
 Methodology
 -----------
 
-All benchmarks were prepared and executed using the Google Benchmark microbenchmarking support library.[CITATIONNEEDED]  CPU benchmarks were run on [TODO: DESCRIBE mutrino], and GPU benchmarks were run on [TODO: DESCRIBE apollo].  CPU benchmarks were compiled with GCC 8.2.0, Intel ICC 18.0.5, and Clang TODO.  GPU benchmarks were compiled with NVIDIA's NVCC version 10.1, using GCC 5.3.0 as the host compiler.  The source code of all benchmarks is available on the mdspan implementation repository that accompanies this paper (see Implementation section above).  A brief description of each benchmark is also included here for completeness.  These benchmarks tend to focus on the three dimensional use case (which we view as the smallest "relatively non-trivial" number of dimensions), but spot checks with larger numbers of dimensions---up to 10---yielded similar results and led to similar conclusions.
+All benchmarks were prepared and executed using the Google Benchmark microbenchmarking support library.[CITATIONNEEDED]  Table \ref{machines} lists the test systems and compilers used for benchmarking.  Most CPU benchmarks were run on Mutrino, and all GPU benchmarks were run on Apollo.  CPU benchmarks were compiled with GCC 8.2.0, Intel ICC 18.0.5, and the latest Clang development branch (GitHub hash `1fcdcd0`, which is LLVM SVN revision 370135; labeled as "Clang 9 (develop)" herein).  GPU benchmarks were compiled with NVIDIA's NVCC version 10.1, using GCC 5.3.0 as the host compiler.  The source code of all benchmarks is available on the mdspan implementation repository that accompanies this paper (see Implementation section above).  A brief description of each benchmark is also included here for completeness.  These benchmarks tend to focus on the three dimensional use case (which we view as the smallest "relatively non-trivial" number of dimensions), but spot checks with larger numbers of dimensions---up to 10---yielded similar results and led to similar conclusions.
+
+TODO explain how OpenMP is used
 
 ```{=latex}
 \begin{table}[htbp]
@@ -111,14 +113,13 @@ for(ptrdiff_t i = 0; i < A.extent(0); ++i) {
 ```
 
 When parallelizing the outer loop via OpenMP, 
-C++17 standard parallel algorithms or CUDA the 
-optimal layout depends on the hardware. 
+C++17 standard parallel algorithms, or CUDA, the optimal layout depends on the hardware. 
 On CPUs the compiler will vectorize the inner loop over 
 `j` and thus a unit-stride access on the second dimension 
 of `A` is optimal. On GPUs no implicit auto-parallelization 
 happens and thus the first dimension must be accessed with 
-a unit-stride. Being able to make this layout change in the 
-data type, means that the algorithm can stay the same across 
+a unit stride. Being able to make this layout change in the 
+type means that the algorithm can be generic over 
 different architectures. 
 
 Results: Compiler Comparison
@@ -127,7 +128,7 @@ Results: Compiler Comparison
 TODO discussion here
 
 ```{=latex}
-\begin{figure}[!ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.45\textwidth]{figures/compiler_comparison.pdf}
 \caption{Comparison of overheads, relative to raw pointer implementations, of the serial versions of various benchmarks across different compilers.}
@@ -138,7 +139,16 @@ TODO discussion here
 Results: Effect of Static Extents
 ---------------------------------
 
-TODO
+```{=latex}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{figures/static_extents_tinymatrixsum_compilers.pdf}
+\caption{Comparison of speedups, relative to the fully dynamic version, of the TinyMatrixSum benchmark.  "D" indicates a dynamic expression of the particular extent, while "S" indicates a static expression (for instance, "DxDxS" indicates that the first extent, 1 million, was expressed dynamically, the second extent, 3, was expressed dynamically, and the third extent, 3, was expressed statically).}
+\label{static-extents}
+\end{figure}
+```
+
+Figure \ref{static-extents} shows the speedup achieved when using static extents for the two inner dimensions as opposed to dynamic extents. When providing them as static extents the compiler is able to fully unroll the inner loops and consequently achieve nearly two times better performance on the test system Mutrino.  The effect of static extents on the compiler's ability to optimize can vary significantly from compiler to compiler based on design decisions internal to the compiler's implementation.
 
 Results: Effect of Layout Abstraction
 -------------------------------------
@@ -155,7 +165,7 @@ throughput (i.e., count memory accesses in the
 algorithm and divide by runtime).  
 
 ```{=latex}
-\begin{figure}[!ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.45\textwidth]{figures/matvec_figure.pdf}
 \caption{Comparison of absolute memory bandwidths for the MatVec benchmark with different memory layouts.}
@@ -168,7 +178,7 @@ Results: Overhead of `subspan`
 
 
 ```{=latex}
-\begin{figure}[!ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.45\textwidth]{figures/subspan_overhead_gcc_and_clang.pdf}
 \caption{Comparison of overheads, relative to raw pointer implementations, of the Subspan3D benchmark for GCC and Clang.}
@@ -180,7 +190,7 @@ Results: Overhead of `subspan`
 For recent versions of GCC and Clang, the results are essentially identical to the raw pointer implementation of `Sum3D`, as shown in Figure \ref{subspan-gcc-and-clang}. (Note that there is no raw pointer implementation of `Subspan3D`, since the whole point is that it would be identical to `Sum3D`).  For ICC 18.0.5, the results showed significant overhead, rendering the GCC and clang results invisible---as much as 400%. (The absolute magnitudes of the raw pointer timings were similiar across all three compilers, so this is a genuine measurement of overhead introduced by the ICC frontend).  Using the more recent ICC 19.0.3.199, we were able to obtain much more reasonable results in C++17 mode.  Interestingly, though, the C++14 results *with the same compiler version* were much more similar to the ICC 18.0.5 results, indicating that the difference arises, at least in part, from more modern C++ abstractions being easier for modern compilers to understand.  These results are shown in Figure \ref{subspan-intel}.
 
 ```{=latex}
-\begin{figure}[!ht]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.5\textwidth]{figures/subspan_overhead_intel.pdf}
 \caption{Comparison of overheads, relative to raw pointer implementations, of the Subspan3D benchmark for ICC 19.0.3.199.  Note that this compiler was not available on our primary testing machine, so [DESCRIBE BLAKE] was used for this benchmark.}
@@ -188,7 +198,9 @@ For recent versions of GCC and Clang, the results are essentially identical to t
 \end{figure}
 ```
 
-Results: Effects of Newer C++ Standards
----------------------------------------
+<!--
+## Results: Effects of Newer C++ Standards
+
 
 TODO
+-->
