@@ -2,12 +2,12 @@
 Design
 ======
 
-In its most basic form, `mdspan` provides a class template for creating types of objects that represent, but do not own, a contiguous piece (or "span") of memory that is to be treated as a multidimensional entity with one or more dimensional constraints.
+In its most basic form, `mdspan` provides a class template for creating types of objects that represent, but do not own, a contiguous piece (or "span") of memory that is to be treated as a multi-dimensional entity with one or more dimensional constraints.
 Together, these dimensional constraints form a *multi-index domain*.
-In the simple case of a two dimensional entity, for instance, this multi-index domain encompasses the row and column indices of what is typically called a matrix.
+In the simple case of a two-dimensional entity, for instance, this multi-index domain encompasses the row and column indices of what is typically called a matrix.
 For instance, 
 
-<!-- Can we run this first example by a few people unfamiliar with mdspan to gauge whether this examples, which is verbose, looks "bad" for us to the uninitiated.-->
+<!-- Can we run this first example by a few people unfamiliar with mdspan to gauge whether this example, which is verbose, looks "bad" to the uninitiated.-->
 ```c++
 void some_function(float* data) {
   auto my_matrix =
@@ -19,7 +19,7 @@ void some_function(float* data) {
 ```
 
 says to create an object that interprets memory starting at the pointer `data` as a matrix with the shape 20 rows by 40 columns.
-Extents can be provided either statically (i.e., at compile-time) or dynamically (as shown above), and static extents can be mixed with dynamic extents:
+Extents can be provided either statically (i.e., at compile time) or dynamically (as shown above), and static extents can be mixed with dynamic extents:
 
 ```c++
 void another_function(float* data) {
@@ -36,12 +36,12 @@ This code snippet also treats `data` as a 20 by 40 matrix, but the first of thes
 The design is greatly simplified by delegating the ownership and lifetime management of the data to orthogonal constructs.
 Thus, `mdspan` merely interprets existing memory as a multi-dimensional entity, leaving management of the underlying memory to the user.
 This follows a trend of similar constructs recently introduced to C++, such as `string_view`\cite{wg21_is_14882:2017, cppreference_string_view} and `span`\cite{wg21_is_14882:2020_cd, cppreference_span}.
-These constructs allow "API funnelling", which makes it easy for libraries to support user's own types instead of forcing users to use a specific type.
+These constructs allow "API funnelling," which makes it easy for libraries to support users' own types instead of forcing users to use a specific type.
 Library interfaces can take `string_view`s or `mdspan`s, and library users can add interfaces to their own types that return a suitable `string_view` or `mdspan`.
-This design pattern enables easy adoption by existing codebases which have their own matrix types; because `mdspan` is non-owning, you can always create an `mdspan` that refers to a matrix owned by another object.
-Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are also non-owning entities which delegate lifetime management as a separate concern.\cite{stepanov2009}
+This design pattern enables easy adoption by existing codebases which have their own matrix types. Since `mdspan` is non-owning, users can always create an `mdspan` that refers to a matrix owned by another object.
+Older abstractions also take this approach. Iterators, which have been central to C++ algorithm design for decades, are also non-owning entities which delegate lifetime management as a separate concern.\cite{stepanov2009}
 
-References to entries in these matrices are obtained by giving a multi-index (that is, a set of indices) to `operator()` of the object, which has been overloaded for this purpose:
+References to entries in these matrices are obtained by giving a multi-index (that is, an ordered set of indices) to the object's `operator()`, which has been overloaded for this purpose:
 
 ```c++
 // add 3.14 to the value on the row with index 10
@@ -77,11 +77,11 @@ auto my_matrix = subspan(my_tens,
 The above snippet creates a 4 by 2 matrix sub-view of `my_tens` where the entries `i, j` correspond to index 2 in the first dimension of `my_tens`, index `i` in the second dimension, `j+2` in the third dimension, and `0` in the fourth dimension.
 This relatively verbose syntax for slicing was preferred over other approaches because slicing needs can vary substantially across different domains and domain-specific syntax can quite easily be built on top of this verbose and explicit syntax.
 
-Just as `std::string` is actually a C++ alias for `std::basic_string`\cite{wg21_is_14882:2017,cppreference_string_view}, `std::mdspan` an alias for `std::basic_mdspan`.
+Just as `std::string` is actually a C++ alias for `std::basic_string`\cite{wg21_is_14882:2017,cppreference_string_view}, `std::mdspan` is an alias for `std::basic_mdspan`.
 <!-- TODO: Be careful about using the terms customization points, abstractions. What term should we use for what the Allocator paramter of vector is? Figure out what Stepanov calls it.-->
 Whereas `std::mdspan` only provides control over the scalar type and the extents, `std::basic_mdspan` exposes more customization points. 
 <!-- TODO: s/accessor policy/accessor -->
-It is templated on four parameters: the scalar type, the extents object, the layout and the accessor policy. 
+It is templated on four parameters: the scalar type, the extents object, the layout, and the accessor policy.
 In the following sections, we will describe these parameters and their utility in achieving higher performance or better portability. 
 
 ## Extents Class Template
@@ -130,11 +130,11 @@ The primary task of the `LayoutMapping` is to represent the transformation of a 
 A large number of algorithms on multi-dimensional arrays have semantics that depend only on the data as retrieved through the multi-index domain, indicating that this transformation is a prime aspect for orthogonalization into a customization point.
 (Note that many algorithms have *performance* characteristics that depend on this transformation, but the separation of semantic aspects of an algorithm from its performance characteristics is critical to modern programming model design, and the fact that the `LayoutMapping` abstraction promotes this separation is further evidence of its utility as a customization point).
 
-A brief survey of existing practice (such as the BLAS technical standard \cite{BLAS}, Eigen\cite{eigenweb}, and MAGMA\cite{magma}) reveals an initial set layout mappings that such an abstraction must support, at minimum:
+A brief survey of existing practice (such as the BLAS technical standard \cite{BLAS}, Eigen\cite{eigenweb}, and MAGMA\cite{magma}) reveals an initial set of layout mappings that such an abstraction must support, at minimum:
 
-* row-major or column-major layouts (represented by the `TRANS` parameters in BLAS); these generalize to describe layouts where the fast-running index is left-most or right-most
-* strided layouts (represented by the `LD` parameters in BLAS); these generalize to any in a class of layouts that can describe the distance in memory between two consecutive indices in a particular dimension with a constant (specific to that dimension).
-* symmetric layouts (e.g., from the `xSYMM` algorithms in BLAS), which also includes generalizations like whether the upper or lower triangle is stored (the `UPLO` parameter in BLAS) and whether the diagonal is stored explicitly, implicitly, or in some separate, contiguous storage.
+* row-major or column-major layouts (represented by the `TRANS` parameters in BLAS), that generalize to describe layouts where the fast-running index is left-most or right-most;
+* strided layouts (represented by the `LD` parameters in BLAS), that generalize to any in a class of layouts that can describe the distance in memory between two consecutive indices in a particular dimension with a constant (specific to that dimension); and
+* symmetric layouts (e.g., from the `xSYMM` algorithms in BLAS), which also include generalizations like whether the upper or lower triangle is stored (the `UPLO` parameter in BLAS) and whether the diagonal is stored explicitly, implicitly, or in some separate, contiguous storage.
 
 In addition to similarities, it is also instructive to look at what differences these layout mappings may introduce, which some algorithms may not be generic over.
 In general, as many previous researchers have noted,\cite{sutton2011design} the design of generic concepts for customization typically begins with the algorithms, not the data structures.
