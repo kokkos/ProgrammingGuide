@@ -130,7 +130,7 @@ The primary task of the `LayoutMapping` is to represent the transformation of a 
 A large number of algorithms on multi-dimensional arrays have semantics that depend only on the data as retrieved through the multi-index domain, indicating that this transformation is a prime aspect for orthogonalization into a customization point.
 (Note that many algorithms have *performance* characteristics that depend on this transformation, but the separation of semantic aspects of an algorithm from its performance characteristics is critical to modern programming model design, and the fact that the `LayoutMapping` abstraction promotes this separation is further evidence of its utility as a customization point).
 
-A brief survey of existing practice (such as the BLAS technical standard [CITATIONNEEDED], Eigen [CITATIONNEEDED], and MAGMA [CITATIONNEEDED]) reveals an initial set layout mappings that such an abstraction must support, at minimum:
+A brief survey of existing practice (such as the BLAS technical standard \cite{BLAS}, Eigen\cite{eigenweb}, and MAGMA\cite{magma}) reveals an initial set layout mappings that such an abstraction must support, at minimum:
 
 * row-major or column-major layouts (represented by the `TRANS` parameters in BLAS); these generalize to describe layouts where the fast-running index is left-most or right-most
 * strided layouts (represented by the `LD` parameters in BLAS); these generalize to any in a class of layouts that can describe the distance in memory between two consecutive indices in a particular dimension with a constant (specific to that dimension).
