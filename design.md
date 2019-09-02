@@ -35,7 +35,7 @@ This code snippet also treats `data` as a 20 by 40 matrix, but the first of thes
 
 The design is greatly simplified by delegating the ownership and lifetime management of the data to orthogonal constructs.
 Thus, `mdspan` merely interprets existing memory as a multi-dimensional entity, leaving management of the underlying memory to the user.
-This follows a trend of similar constructs recently introduced to C++, such as `string_view` and `span`[CITATIONNEEDED].
+This follows a trend of similar constructs recently introduced to C++, such as `string_view`\cite{wg21_is_14882:2017, cppreference_string_view} and `span`\cite{wg21_is_14882:2020_cd, cppreference_span}.
 Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are also non-owning entities which delegate lifetime management as a separate concern.[CITATIONNEEDED]
 
 References to entries in these matrices are obtained by giving a multi-index (that is, a set of indices) to `operator()` of the object, which has been overloaded for this purpose:
@@ -49,7 +49,7 @@ some_matrix(10, 5) += 3.14;
 printf("%f", some_matrix(0, 38));
 ```
 
-<!-- TOOD: Bryce doesn't like this example, make it better. -->
+<!-- TODO: Bryce doesn't like this example, make it better. -->
 
 The length of each dimension is accessed via the `extent` member function.
 It takes an index to indicate the dimension.
@@ -74,7 +74,7 @@ auto my_matrix = subspan(my_tens,
 The above snippet creates a 4 by 2 matrix sub-view of `my_tens` where the entries `i, j` correspond to index 2 in the first dimension of `my_tens`, index `i` in the second dimension, `j+2` in the third dimension, and `0` in the fourth dimension.
 This relatively verbose syntax for slicing was preferred over other approaches because slicing needs can vary substantially across different domains and domain-specific syntax can quite easily be built on top of this verbose and explicit syntax.
 
-Just as `std::string` is actually a C++ alias for `std::basic_string`, `std::mdspan` an alias for `std::basic_mdspan`.
+Just as `std::string` is actually a C++ alias for `std::basic_string`\cite{wg21_is_14882:2017,cppreference_string_view}, `std::mdspan` an alias for `std::basic_mdspan`.
 <!-- TODO: Be careful about using the terms customization points, abstractions. What term should we use for what the Allocator paramter of vector is? Figure out what Stepanov calls it.-->
 Whereas `std::mdspan` only provides control over the scalar type and the extents, `std::basic_mdspan` exposes more customization points. 
 <!-- TODO: s/accessor policy/accessor -->
@@ -108,7 +108,7 @@ The `TinyMatrixSum` benchmark (below) provides a proxy for problems with this so
 
 <!--- TODO: Bryce doesn't like "be generic over". Bryce thinks he prefers "parameterize" or some phrasing that uses that term.-->
 Modern C++ design requires library authors to orthogonalize certain aspects of the design into customization points that algorithms may be generic over.
-The most commonplace example of this is the `Allocator` abstraction[CITATIONNEEDED], which controls memory allocation for standard containers like `std::vector`.
+The most commonplace example of this is the `Allocator` abstraction\cite{wg21_is_14882:2017,cppreference_allocator}, which controls memory allocation for standard containers like `std::vector`\cite{wg21_is_14882:2017,cppreference_vector}.
 Most algorithms on containers do not change regardless of how the underlying data is allocated, and the `Allocator` abstraction allows those algorithms to be generic over the form of memory allocation used by the container.
 
 
@@ -164,11 +164,11 @@ The requirements on the `LayoutMapping` concept are summarized in table \ref{lay
 
 ## Accessor abstraction
 
-After several design iterations,[CITEP0009] the authors came to the conclusion that many of the remaining customizations could be encapsulated in the answer to one question: how should the implementation turn an instance of some pointer type and an offset (obtained from the `LayoutMapping` abstraction) into an instance of some reference type? The `AccessPolicy` customization point is designed to provide all of the necessary flexibility in the answer to this question.
+After several design iterations,\cite{wg21_p0009} the authors came to the conclusion that many of the remaining customizations could be encapsulated in the answer to one question: how should the implementation turn an instance of some pointer type and an offset (obtained from the `LayoutMapping` abstraction) into an instance of some reference type? The `AccessPolicy` customization point is designed to provide all of the necessary flexibility in the answer to this question.
 Our exploration in this space began with a couple of specific use cases: a non-aliasing `AccessPolicy`, similar to the `restrict` keyword in C,[CITATIONNEEDED] and an atomic `AccessPolicy`, where operations on the resulting reference use atomic operations.
  The former needs to customize the pointer type to include implementation-specific annotations (usually some variant of the C-style `restrict` keyword) that indicate the pointer does not alias pointers derived from other sources within the same context (usually a function scope).
 The latter needs to customize the reference type produced by the dereference operation to have it return a `std::atomic_ref<T>`.
-(`std::atomic_ref<T>` was merged into the C++ standard working draft during the C++20 cycle, and will likely be officially approved as part of the C++20 balloting process when that process completes sometime in 2020.[CITEP0019]) These requirements immediately led us to include customizable `reference` and `pointer` type names as part of the `AccessPolicy` concept.
+(`std::atomic_ref<T>` was merged into the C++ standard working draft during the C++20 cycle, and will likely be officially approved as part of the C++20 balloting process when that process completes sometime in 2020\cite{wg21_p0019}. These requirements immediately led us to include customizable `reference` and `pointer` type names as part of the `AccessPolicy` concept.
 Marrying these two customizations could take several forms; one possibility is to have a function that simply takes a `pointer` and returns a `reference`.
 However, this requires the `pointer` type to be arbitrarily offsettable---e.g., using `operator+` or `std::advance`.
 A simpler approach that removes this requirement is to have a customization point that takes the `pointer` and an offset and returns the `reference` directly.
@@ -192,7 +192,7 @@ The requirements on the `AccessPolicy` concept are summarized in table \ref{acce
 \end{table}
 ```
 
-### Accessor Use Case: Non-aliasing Semantics
+### Accessor Use Case: Non-Aliasing Semantics
 
 As a concrete example, the (trivial) `AccessorPolicy` required to express non-aliasing semantics (similar to the `restrict` keyword and supported in many C++ compilers as `__restrict`) is shown in figure \ref{restrict-accessor}.
 This differs from the default accessor (`std::accessor_basic<T>`) only in the definition of the nested type `pointer`.
