@@ -266,7 +266,7 @@ Similar to the infamous `std::vector<bool>`, the accessor abstraction can be use
 
 Heterogeneity often requires a program to access multiple, potentially disjoint memory spaces.
 Thus far, vendor-provided APIs for heterogeneity have tended to represent this memory with plain-old raw pointers.
-An important emerging paradigm in modern programming model design is so-called "strong types" (also called "opaque typedefs" or "phantom types"),[CITATIONNEEDED] wherein meaning is opaquely attached to the form of the type (for instance, `distance<double>` and `temperature<double>` would be different concrete types with the same form as `double`).
+An important emerging paradigm in modern programming model design is so-called "strong types" (also called "opaque typedefs" or "phantom types"),\cite{strongTypes,phantomOrigin} wherein meaning is opaquely attached to the form of the type (for instance, `distance<double>` and `temperature<double>` would be different concrete types with the same form as `double`).
 Applied to heterogeneity, the paradigm would suggest replacing raw pointers with an opaque typedef indicating its compatibility, accessibility, and so on.
 This not only introduces safety with respect to memory access by an execution resource, but also allows generic software design strategies where execution mechanisms can be deduced from the type of the data structure.
 In `mdspan`, such strong typing can be injected via the customization of the associated pointer type in the `AccessorPolicy`.
