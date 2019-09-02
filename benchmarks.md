@@ -139,6 +139,8 @@ TODO discussion here
 Results: Effect of Static Extents
 ---------------------------------
 
+Figure \ref{static-extents} shows the speedup achieved when using static extents for the two inner dimensions as opposed to dynamic extents. When providing them as static extents the compiler is able to fully unroll the inner loops and consequently achieve nearly two times better performance on the test system Mutrino.  The effect of static extents on the compiler's ability to optimize can vary significantly from compiler to compiler based on design decisions internal to the compiler's implementation.
+
 ```{=latex}
 \begin{figure}[htbp]
 \centering
@@ -147,8 +149,6 @@ Results: Effect of Static Extents
 \label{static-extents}
 \end{figure}
 ```
-
-Figure \ref{static-extents} shows the speedup achieved when using static extents for the two inner dimensions as opposed to dynamic extents. When providing them as static extents the compiler is able to fully unroll the inner loops and consequently achieve nearly two times better performance on the test system Mutrino.  The effect of static extents on the compiler's ability to optimize can vary significantly from compiler to compiler based on design decisions internal to the compiler's implementation.
 
 Results: Effect of Layout Abstraction
 -------------------------------------
