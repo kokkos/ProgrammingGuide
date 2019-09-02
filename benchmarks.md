@@ -2,7 +2,7 @@
 Benchmarks
 ==========
 
-A common complaint about C++ abstractions in HPC is that they hinder compiler optimizations. While that was largely true in the past, a number of developments have improved the situation. More recent C++ standards introduce capabilities and constraints which help the compiler optimize code, and with the widespread adoption of C++ abstraction layers in industry significant work has gone into optimizing the commonly used compilers. To demonstrate that mdspan does not introduce overheads compared to using raw pointers with manual indexing we will show benchmark results generally both for the version using mdspan and an equivalent implementation using raw pointers.  Since the difference in most benchmarks is very small, most figures in this section show overhead of the `mdspan` version over the raw pointer variant. Negative overhead indicates cases where the `mdspan` version was faster.
+A common complaint about C++ abstractions in HPC is that they hinder compiler optimizations. While that was largely true in the past, a number of developments have improved the situation. More recent C++ standards introduce capabilities and constraints which help the compiler optimize code, and with the widespread adoption of C++ abstraction layers in industry significant work has gone into optimizing the commonly used compilers. To demonstrate that `mdspan` does not introduce overheads compared to using raw pointers with manual indexing we will show benchmark results both for the version using `mdspan` and an equivalent implementation using raw pointers.  Since the difference in most benchmarks is very small, most figures in this section show overhead of the `mdspan` version over the raw pointer variant. Negative overhead indicates cases where the `mdspan` version was faster.
 
 ```{=latex}
 \begin{figure*}[!ht]
@@ -18,7 +18,7 @@ Figure \ref{raw-vs-mdspan-overview} shows a normalized comparison of `mdspan` ve
 Methodology
 -----------
 
-All benchmarks were prepared and executed using the Google Benchmark microbenchmarking support library.[CITATIONNEEDED]  CPU benchmarks were run on [TODO: DESCRIBE mutrino], and GPU benchmarks were run on [TODO: DESCRIBE apollo].  CPU benchmarks were compiled with GCC 8.2.0, Intel ICC 18.0.5, and Clang TODO.  GPU benchmarks were compiled with NVIDIA's NVCC version 10.1, using GCC 5.3.0 as the host compiler.  The source code of all benchmarks is available on the mdspan implementation repository that accompanies this paper (see Implementation section above).  A brief description of each benchmark is also included here for completeness.  These benchmarks tend to focus on the three dimensional use case (which we view as the smallest "relatively non-trivial" number of dimensions), but spot checks with larger numbers of dimensions---up to 10---yielded similar results and led to similar conclusions.
+All benchmarks were prepared and executed using the Google Benchmark microbenchmarking library.[CITATIONNEEDED]  CPU benchmarks were run on [TODO: DESCRIBE mutrino], and GPU benchmarks were run on [TODO: DESCRIBE apollo].  CPU benchmarks were compiled with GCC 8.2.0, Intel ICC 18.0.5, and Clang TODO.  GPU benchmarks were compiled with NVIDIA's NVCC version 10.1, using GCC 5.3.0 as the host compiler.  The source code of all benchmarks is available on the mdspan implementation repository that accompanies this paper (see Implementation section above).  A brief description of each benchmark is also included here for completeness.  These benchmarks tend to focus on the three dimensional use case (which we view as the smallest "relatively non-trivial" number of dimensions), but spot checks with larger numbers of dimensions---up to 10---yielded similar results and led to similar conclusions.
 
 ```{=latex}
 \begin{table}[htbp]
@@ -83,7 +83,7 @@ for(ptrdiff_t i = 0; i < s.extent(0); i ++) {
 
 ### `Subspan3D` benchmark
 
-This benchmark performs the same operations as the `Sum3D` benchmark, but uses three calls to `subspan` rather than the normal means of dereferencing an `mdspan`.  It is intended to stress the abstraction overhead (or lack thereof) in the implementation, since `subspan` is the most complex part of the `mdspan` implementation from a C++ perspective.  Note that this is, of course, not the indended use case of the `subspan` function, though it serves as a reasonable worst case proxy.  The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output named `sum`, looks like:
+This benchmark performs the same operations as the `Sum3D` benchmark, but uses three calls to `subspan` rather than the normal means of dereferencing an `mdspan`.  It is intended to stress the abstraction overhead (or lack thereof) in the implementation, since `subspan` is the most complex part of the `mdspan` implementation from a C++ perspective.  Note that this is not the indended use case of the `subspan` function, though it serves as a reasonable worst case proxy.  The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output named `sum`, looks like:
 
 ```c++
 for(ptrdiff_t i = 0; i < s.extent(0); ++i) {
