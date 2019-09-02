@@ -161,7 +161,7 @@ The issue of offsetting a `pointer` to create another `pointer`, while not neces
 As a concrete example, the (trivial) `AccessorPolicy` required to express non-aliasing semantics (similar to the `restrict` keyword and supported in many C++ compilers as `__restrict`) is shown in figure \ref{restrict-accessor}.  This differs from the default accessor (`std::accessor_basic<T>`) only in the definition of the nested type `pointer`.  Interestingly, because the design of `mdspan` requires the `pointer` to be used as a parameter (in `access`) before it is ever turned into a reference, `mdspan` is able to skirt the well-known issues surrounding the meaning of the `restrict` qualifier on a data member of a struct.[CITATIONNEEDED?]
 
 ```{=latex}
-\begin{figure}
+\begin{figure}[!h]
 ```
 ```c++
 template <class T>
@@ -189,7 +189,7 @@ struct RestrictAccessor {
 Frequently in HPC applications, it is necessary to access a region of memory atomically for only a small portion of its lifetime.  Constructing the entity to be atomic for the entire lifetime of the underlying memory, as is done with `std::atomic`, may have unacceptable overhead for many HPC use cases.  As an entity that references a region of memory for a subset of that memory's lifetime, `mdspan` is ideally suited to be paired with a fancy reference type that expresses atomic semantics (that is, all operations on the underlying memory are to be performed atomically by the abstract machine).  With the introduction of `std::atomic_ref` in C++20, all that is needed is an accessor policy that customizes the reference type and provides an `access` method that constructs such a reference.  An implementation of such an `AccessorPolicy` is shown in figure \ref{atomic-accessor}.
 
 ```{=latex}
-\begin{figure}
+\begin{figure}[!h]
 ```
 ```c++
 template <class T>
