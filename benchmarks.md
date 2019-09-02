@@ -1,7 +1,6 @@
 
 Benchmarks
 ==========
-
 A common complaint about C++ abstractions in HPC is that they hinder compiler optimizations.
 While that was largely true in the past, a number of developments have improved the situation.
 More recent C++ standards introduce capabilities and constraints which help the compiler optimize code, and with the widespread adoption of C++ abstraction layers in industry significant work has gone into optimizing the commonly used compilers.
@@ -26,15 +25,15 @@ Examination of generated assembly (and, at least in the case of the Intel compil
 Methodology
 -----------
 
-All benchmarks were prepared and executed using the Google Benchmark microbenchmarking support library.[CITATIONNEEDED]  Table \ref{machines} lists the test systems and compilers used for benchmarking.
-Most CPU benchmarks were run on Mutrino, and all GPU benchmarks were run on Apollo.
+All benchmarks were prepared and executed using the Google Benchmark microbenchmarking support library.[CITATIONNEEDED]
+Table \ref{machines} lists the test systems and compilers used for benchmarking.
+Unless otherwise stated, CPU benchmarks were run on Mutrino, and GPU benchmarks were run on Apollo.
+CPU benchmarks are serial unless labeled "OpenMP", in which case they were parallelized with the OpenMP `parallel for` directive on the outermost loop (with the intent of measuring typical basic usage of OpenMP).
 CPU benchmarks were compiled with GCC 8.2.0, Intel ICC 18.0.5, and the latest Clang development branch (GitHub hash `1fcdcd0`, which is LLVM SVN revision 370135; labeled as "Clang 9 (develop)" herein).
 GPU benchmarks were compiled with NVIDIA's NVCC version 10.1, using GCC 5.3.0 as the host compiler.
 The source code of all benchmarks is available on the mdspan implementation repository that accompanies this paper (see Implementation section above).
 A brief description of each benchmark is also included here for completeness.
 These benchmarks tend to focus on the three dimensional use case (which we view as the smallest "relatively non-trivial" number of dimensions), but spot checks with larger numbers of dimensions---up to 10---yielded similar results and led to similar conclusions.
-
-TODO explain how OpenMP is used
 
 ```{=latex}
 \begin{table}[htbp]
@@ -124,7 +123,7 @@ for(ptrdiff_t i = 0; i < s.extent(0); ++i) {
 ### `MatVec` benchmark
 
 
-The `MatVec` benchmark performs a simple dense matrix-vector multiply operation; it is aimed at demonstrating the impact of layout choice on performance, particularly in the context of performance portability of parallization across diverse hardware platforms.
+The `MatVec` benchmark performs a simple dense matrix-vector multiply operation; it is aimed at demonstrating the impact of layout choice on performance, particularly in the context of performance portability of parallelization across diverse hardware platforms.
 Consider this serial implementation:
 
 ```c++
@@ -144,7 +143,11 @@ Being able to make this layout change in the type means that the algorithm can b
 Results: Compiler Comparison
 ----------------------------
 
-TODO discussion here
+Figure \ref{compiler-comparison} shows a comparison of `mdspan` overheads relative to the raw pointer analog for serial versions of several benchmarks. 
+With the exception of the `TinyMatrixSum` benchmark using dynamic extents, overheads on all of the benchmarks were either completely or very nearly within the experimental noise.
+The outlier in this regard, `TinyMatrixSum` with dynamic extents, is an interesting case study in the brittleness of modern loop optimizers, whether or not C++ abstraction is involved.
+To a first approximation, the authors believe the explanation for this is as follows: if the compiler heuristic guesses that the inner loop sizes are too large, the resulting optimization decisions (such as the amount of unrolling) are inefficient for a 3x3 matrix.
+How the use of `mdspan` interacts with the compiler's heuristic for generating this guess varies from compiler to compiler; for instance, with the latest version of Clang, the optimizer actually happens to make a *better* guess, leading to a "negative overhead."
 
 ```{=latex}
 \begin{figure}[htbp]
@@ -154,6 +157,10 @@ TODO discussion here
 \label{compiler-comparison}
 \end{figure}
 ```
+
+In many ways, the optimizer brittleness in this single outlier presents a strong argument for the sort of genericness that `mdspan` provides.
+As C++ continues to evolve, the sorts of hints and heuristic guidance to address this are likely to trickle in through compiler-specific extensions.
+Maintaining such hints inside the logic of application code is often impractical or impossible, but incorporating that information into the `mdspan` accessor (particularly if such accessors can be vendor-provided), which most algorithms can be generic over, is a completely reasonable proposition in many cases.
 
 Results: Effect of Static Extents
 ---------------------------------
@@ -191,6 +198,14 @@ The results shown represent performance measured in terms algorithmic memory thr
 Results: Overhead of `subspan`
 ------------------------------
 
+For recent versions of GCC and Clang, the results are essentially identical to the raw pointer implementation of `Sum3D`, as shown in Figure \ref{subspan-gcc-and-clang}.
+(Note that there is no raw pointer implementation of `Subspan3D`, since the whole point is that it would be identical to `Sum3D`).
+For ICC 18.0.5, the results showed significant overhead, rendering the GCC and clang results invisible---as much as 400%.
+(The absolute magnitudes of the raw pointer timings were similar across all three compilers, so this is a genuine measurement of overhead introduced by the ICC frontend).
+Using the more recent ICC 19.0.3.199, we were able to obtain much more reasonable results in C++17 mode.
+Interestingly, though, the C++14 results *with the same compiler version* were much more similar to the ICC 18.0.5 results, indicating that the difference arises, at least in part, from more modern C++ abstractions being easier for modern compilers to understand.
+These results are shown in Figure \ref{subspan-intel}.
+
 
 ```{=latex}
 \begin{figure}[htbp]
@@ -201,14 +216,6 @@ Results: Overhead of `subspan`
 \end{figure}
 ```
 
-
-For recent versions of GCC and Clang, the results are essentially identical to the raw pointer implementation of `Sum3D`, as shown in Figure \ref{subspan-gcc-and-clang}.
-(Note that there is no raw pointer implementation of `Subspan3D`, since the whole point is that it would be identical to `Sum3D`).
-For ICC 18.0.5, the results showed significant overhead, rendering the GCC and clang results invisible---as much as 400%.
-(The absolute magnitudes of the raw pointer timings were similiar across all three compilers, so this is a genuine measurement of overhead introduced by the ICC frontend).
-Using the more recent ICC 19.0.3.199, we were able to obtain much more reasonable results in C++17 mode.
-Interestingly, though, the C++14 results *with the same compiler version* were much more similar to the ICC 18.0.5 results, indicating that the difference arises, at least in part, from more modern C++ abstractions being easier for modern compilers to understand.
-These results are shown in Figure \ref{subspan-intel}.
 
 ```{=latex}
 \begin{figure}[htbp]
