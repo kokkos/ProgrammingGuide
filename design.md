@@ -39,7 +39,7 @@ This follows a trend of similar constructs recently introduced to C++, such as `
 These constructs allow "API funnelling", which makes it easy for libraries to support user's own types instead of forcing users to use a specific type.
 Library interfaces can take `string_view`s or `mdspan`s, and library users can add interfaces to their own types that return a suitable `string_view` or `mdspan`.
 This design pattern enables easy adoption by existing codebases which have their own matrix types; because `mdspan` is non-owning, you can always create an `mdspan` that refers to a matrix owned by another object.
-Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are also non-owning entities which delegate lifetime management as a separate concern.[CITATIONNEEDED]
+Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are also non-owning entities which delegate lifetime management as a separate concern.\cite{stepanov2009}
 
 References to entries in these matrices are obtained by giving a multi-index (that is, a set of indices) to `operator()` of the object, which has been overloaded for this purpose:
 
