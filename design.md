@@ -2,8 +2,9 @@
 Design
 ======
 
-In its most basic form, `mdspan` provides a class template for creating types of objects that represent a contiguous piece (or "span") of memory that is to be treated as a multidimensional entity with one or more dimensional constraints.  Together, these dimensional constraints form a multi-index domain.  In the simple case of a two dimensional entity, for instance, this multi-index domain encompasses the row and column indices of what is typically called a matrix.  For instance, 
+In its most basic form, `mdspan` provides a class template for creating types of objects that represent, but do not own, a contiguous piece (or "span") of memory that is to be treated as a multidimensional entity with one or more dimensional constraints.  Together, these dimensional constraints form a *multi-index domain*.  In the simple case of a two dimensional entity, for instance, this multi-index domain encompasses the row and column indices of what is typically called a matrix.  For instance, 
 
+<!-- Can we run this first example by a few people unfamiliar with mdspan to gauge whether this examples, which is verbose, looks "bad" for us to the uninitiated.-->
 ```c++
 void some_function(float* data) {
   auto my_matrix =
@@ -14,7 +15,7 @@ void some_function(float* data) {
 }
 ```
 
-says to create an object that interprets memory starting at the pointer `data` as a matrix with the shape 20 rows by 40 columns.  Extents can be provided either statically (i.e., at compile-time) or dynamically, and static extents can be mixed with dynamic extents:
+says to create an object that interprets memory starting at the pointer `data` as a matrix with the shape 20 rows by 40 columns.  Extents can be provided either statically (i.e., at compile-time) or dynamically (as shown above), and static extents can be mixed with dynamic extents:
 
 ```c++
 void another_function(float* data) {
@@ -30,29 +31,29 @@ This code snippet also treats `data` as a 20 by 40 matrix, but the first of thes
  compile time---all instances of the type `mdspan<double, 20, dynamic_extent>` will have 20 rows.
 
 The design is greatly simplified by delegating the ownership and lifetime management of the data to orthogonal constructs.  Thus, `mdspan` merely interprets existing memory as a multi-dimensional entity, leaving management of the underlying memory to the user. 
-This follows a trend of similar constructs recently introduced to C++, such as `string_view` and `span`.  Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are 
-also non-owning entities which delegate lifetime management as a separate concern.
+This follows a trend of similar constructs recently introduced to C++, such as `string_view` and `span`[CITATIONNEEDED].  Older abstractions also take this approach---iterators, which have been central to C++ algorithm design for decades---are 
+also non-owning entities which delegate lifetime management as a separate concern.[CITATIONNEEDED]
 
 References to entries in these matrices are obtained by giving a multi-index (that is, a set of indices) to `operator()` 
 of the object, which has been overloaded for this purpose:
 
 ```c++
-// add 3.14 to the value on
-// the row with index 10 and
+// add 3.14 to the value on the row with index 10 and
 // the column with index 5
-my_mat(10, 5) += 3.14;
-// print the value of the entry
-// in the row with index 0 and
+some_matrix(10, 5) += 3.14;
+// print the value of the entry in the row with index 0 and
 // the column with index 38
-printf("%f", another_matrix(0, 38));
+printf("%f", some_matrix(0, 38));
 ```
+
+<!-- TOOD: Bryce doesn't like this example, make it better. -->
 
 The length of each dimension is accessed via the `extent` member function. It takes an index to indicate the dimension.
 A loop to multiply all entries of the matrix by a scalar could thus look like this:
 
 ```c++
-for(int row = 0; row < my_mat.extent(0); row++)
-  for(int col = 0; col < my_mat.extent(1); col++)
+for(int row = 0; row < my_mat.extent(0); ++row)
+  for(int col = 0; col < my_mat.extent(1); ++col)
     my_mat(row, col) *= 2.0;
 ```
 
@@ -60,17 +61,20 @@ Arbitrary slices of an `mdspan` can be taken using the `subspan` function:
 
 ```c++
 auto my_tens = mdspan<float, 3, 4, 5, 20>(data);
-auto my_mat = subspan(my_tens,
+auto my_matrix = subspan(my_tens,
   2, all, pair{2, 4}, 0
 );
 ```
 
+<!-- TODO: Maybe explain this a little more verbosely.-->
 The above snippet creates a 4 by 2 matrix sub-view of `my_tens` where the entries `i, j` correspond to index 2 in the first dimension of `my_tens`, index `i` in the second dimension, `j+2` in the third dimension, and `0` in the fourth dimension.  This relatively verbose syntax for slicing was preferred over other approaches because slicing needs can vary substantially across different domains and domain-specific syntax can quite easily be built on top of this verbose and explicit syntax.
 
 Just as `std::string` is actually a C++ alias for `std::basic_string`, `std::mdspan` an alias for `std::basic_mdspan`.
+<!-- TODO: Be careful about using the terms customization points, abstractions. What term should we use for what the Allocator paramter of vector is? Figure out what Stepanov calls it.-->
 Whereas `std::mdspan` only provides control over the scalar type and the extents, `std::basic_mdspan` exposes more customization points. 
+<!-- TODO: s/accessor policy/accessor -->
 It is templated on four parameters: the scalar type, the extents object, the layout and the accessor policy. 
-In the following we will describe these parameters and their utility in achieving higher performance or better portability. 
+In the following sections, we will describe these parameters and their utility in achieving higher performance or better portability. 
 
 ## Extents Class Template
 
@@ -105,7 +109,13 @@ for problems with this sort of behavior.
 
 ## Layout abstraction
 
-Modern C++ design requires library authors to orthogonalize certain aspects of the design into customization points that algorithms may be generic over.  The most commonplace example of this is the `Allocator` abstraction, which controls memory allocation for standard containers like `vector`.  Most algorithms on containers do not change regardless of how the underlying data is allocated, and the `Allocator` abstraction allows those algorithms to be generic over the form of memory allocation used by the container.  An example of one such aspect in the current context is the layout of the underlying data with respect to the multi-index domain.  While a high-quality-of-implementation matrix multiply would definitely specialize for different data layouts, the simplest possible implementation would only need to know how to get and store data associated with a given multi-index into the underlying memory.  This also describes the majority of use cases from the perspective of the caller of such algorithms, where only the semantics of a mathematical matrix multiply are needed regardless of data layout.  While the grouping of a single set of mathematical semantics under a common algorithm name (regardless of layout) does serve to reduce cognitive load for the writer and (particularly) the reader of the code, it can also serve as a conduit for performance portability.  The canonical example, again with reference to data layout, is the portability of access patterns in code that may run on a CPU or on a GPU.  GPUs need to coalesce accesses (that is, stride across execution agents) because of the vector nature of the underlying hardware, whereas CPUs want to maximize locality (that is, assign contiguous chunks to the same execution agent) in order to increase cache reuse.  It is easy to see that, with respect to matrix layout, for instance, these two are transposes of each other.
+<!--- TODO: Bryce doesn't like "be generic over". Bryce thinks he prefers "parameterize" or some phrasing that uses that term.-->
+Modern C++ design requires library authors to orthogonalize certain aspects of the design into customization points that algorithms may be generic over.  The most commonplace example of this is the `Allocator` abstraction[CITATIONNEEDED], which controls memory allocation for standard containers like `std::vector`.  Most algorithms on containers do not change regardless of how the underlying data is allocated, and the `Allocator` abstraction allows those algorithms to be generic over the form of memory allocation used by the container. 
+
+An example of one such aspect in the current context is the layout of the underlying data with respect to the multi-index domain.  While a high-quality-of-implementation matrix multiply would definitely specialize for different data layouts, the simplest possible implementation would only need to know how to get and store data associated with a given multi-index into the underlying memory.  This also describes the majority of use cases from the perspective of the caller of such algorithms, where only the semantics of a mathematical matrix multiply are needed regardless of data layout. The grouping of a single set of mathematical semantics under a common algorithm name (regardless of layout) serves as a conduit for performance portability, and additionally reduces the cognitive load for the writer and particularly the reader of the code.
+
+<!-- TODO: Write a new closing sentence to this paragraph.-->
+The canonical example, again with reference to data layout, is the portability of access patterns in code that may run on a latency-optimizer processed (e.g., CPU) or on a bandwidth-optimized processor (e.g., GPU).  GPUs need to coalesce accesses (that is, stride across execution agents) because of the vector nature of the underlying hardware, whereas CPUs want to maximize locality (that is, assign contiguous chunks to the same execution agent) in order to increase cache reuse. 
 
 The abstraction for representing data layout generically is called the `LayoutMapping`.  The primary task of the `LayoutMapping` is to represent the transformation of a multi-index into a single, scalar memory offset.  A large number of algorithms on multi-dimensional arrays have semantics that depend only on the data as retrieved through the multi-index domain, indicating that this transformation is a prime aspect for orthogonalization into a customization point.  (Note that many algorithms have *performance* characteristics that depend on this transformation, but the separation of semantic aspects of an algorithm from its performance characteristics is critical to modern programming model design, and the fact that the `LayoutMapping` abstraction promotes this separation is further evidence of its utility as a customization point).
 
@@ -208,5 +218,5 @@ Similar to the infamous `std::vector<bool>`, the accessor abstraction can be use
 
 ### Accessor Use Case: Strong Pointer Types for Heterogeneous Memory Spaces 
 
-Heterogeneity often requires a program to access multiple, potentially disjoint memory spaces.  Thus far, vendor-provided APIs for heterogeneity have tended to represent this memory with plain-old raw pointers.  An important emerging paradigm in modern programming model design is so-called "strong types" (also called "opaque typedefs" or "phantom types"),[CITATIONNEEDED] wherein meaning is opaquely attached to the form of the type (for instance, `distance<double>` and `temperature<double>` would be different concrete types with the same form as `double`).  Applied to heterogeneity, the paradigm would suggest replacing raw pointers with an opaque typedef indicating its compatibility, accessibility, and so on. This not only introduces safety with respect to memory access by an execution resource, but also allows generic software design strategies where execution mechanisms can be deduced from the type of the data structure. In `mdspan`, such strong typing can be injected via the customization of the associated pointer type in the `AccessorPolicy`. Initially, of course, such extensions will be outside of the C++ standard (i.e., in CUDA, OpenMP, HIP, SYCL, etc.), but this design provides a means of forward compatibility if and when it addresses the concept of heterogeneous memory resources in the language.
+Heterogeneity often requires a program to access multiple, potentially disjoint memory spaces.  Thus far, vendor-provided APIs for heterogeneity have tended to represent this memory with plain-old raw pointers.  An important emerging paradigm in modern programming model design is so-called "strong types" (also called "opaque typedefs" or "phantom types"),[CITATIONNEEDED] wherein meaning is opaquely attached to the form of the type (for instance, `distance<double>` and `temperature<double>` would be different concrete types with the same form as `double`).  Applied to heterogeneity, the paradigm would suggest replacing raw pointers with an opaque typedef indicating its compatibility, accessibility, and so on. This not only introduces safety with respect to memory access by an execution resource, but also allows generic software design strategies where execution mechanisms can be deduced from the type of the data structure. In `mdspan`, such strong typing can be injected via the customization of the associated pointer type in the `AccessorPolicy`. Initially, of course, such extensions will be outside of the C++ standard (e.g., OpenMP, HIP, SYCL, and older versions of CUDA), but this design provides a means of forward compatibility if and when it addresses the concept of heterogeneous memory resources in the language.
 

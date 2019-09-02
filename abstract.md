@@ -2,10 +2,9 @@
 Multi-dimensional arrays are ubiquitous in high-performance computing (HPC), 
 but their absense from the C++ language standard is a long-standing and well-known limitation of its use for HPC.
 This paper describes the design and implementation of `mdspan`, 
-a proposed C++ standard multidimensional array view that is very likely to be merged into 
-the ISO-C++ standard working draft early in the C++23 standardization cycle. 
-The proposal is largely inspired by work done in the Kokkos project - a C++ programming model for
-Performance Portability deployed by numerous HPC institutions to prepare their code base for 
+a proposed C++ standard multidimensional array view (planned for inclusion in C++23).
+The proposal is largely inspired by work done in the Kokkos project - a C++ performance portable programming model for
+deployed by numerous HPC institutions to prepare their code base for 
 the exascale class super computing systems. 
 This paper describes the final design of mdspan after a 5-year process to achieve consensus in the
 C++ community. 
