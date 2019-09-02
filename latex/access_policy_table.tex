@@ -8,7 +8,7 @@ Expression & Meaning \\
     \texttt{A::pointer} & The pointer type through which a range of elements are accessed. \\
     \texttt{p} & An instance of \texttt{A::pointer}. \\
     \texttt{i} & Non-negative value of type \texttt{ptrdiff\_t}. \\
-    \texttt{A::reference} & The type through which an element is accessed.  Must be convertible to \texttt{A::element\_type} \\
+    \texttt{A::reference} & The type through which an element is accessed.  Must be convertible to \texttt{A::element\_type}. \\
     \texttt{A::offset\_policy} & (Optional) An \texttt{AccessPolicy} type convertible from \texttt{A}. Defaults to \texttt{A}. \\
     \texttt{a.access(p, i)} & Returns an object that provides access to the \texttt{i}-th element in the range of elements that starts at \texttt{p}. \\
     \texttt{a.offset(p, i)} & An instance of \texttt{A::offset\_policy::pointer} for which \texttt{A::offset\_policy(a).access( a.offset(p, i), 0)} references the same element as \texttt{a.access(p, i)}. \\
