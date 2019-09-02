@@ -1,0 +1,103 @@
+@article{DOEPPP,
+title = {DOE Centers of Excellence Performance Portability Meeting},
+author = {Neely, J. R.},
+abstractNote = {Performance portability is a phrase often used, but not well understood. The DOE is deploying systems at all of the major facilities across ASCR and ASC that are forcing application developers to confront head-on the challenges of running applications across these diverse systems. With GPU-based systems at the OLCF and LLNL, and Phi-based systems landing at NERSC, ACES (LANL/SNL), and the ALCF – the issue of performance portability is confronting the DOE mission like never before. A new best practice in the DOE is to include “Centers of Excellence” with each major procurement, with a goal of focusing efforts on preparing key applications to be ready for the systems coming to each site, and engaging the vendors directly in a “shared fate” approach to ensuring success. While each COE is necessarily focused on a particular deployment, applications almost invariably must be able to run effectively across the entire DOE HPC ecosystem. This tension between optimizing performance for a particular platform, while still being able to run with acceptable performance wherever the resources are available, is the crux of the challenge we call “performance portability”. This meeting was an opportunity to bring application developers, software providers, and vendors together to discuss this challenge and begin to chart a path forward.},
+doi = {10.2172/1332474},
+journal = {},
+number = ,
+volume = ,
+place = {United States},
+year = {2016},
+month = {4}
+}
+
+@article{ gridcpp2018,
+        author = {{Boyle, Peter A.} and {Clark, M.A.} and {DeTar, Carleton} and {Lin, Meifeng} and {Rana, Verinder} and {Vaquero Avil\'es-Casco, Alejandro}},
+        title = {Performance Portability Strategies for Grid C++ Expression Templates},
+        DOI= "10.1051/epjconf/201817509006",
+        url= "https://doi.org/10.1051/epjconf/201817509006",
+        journal = {EPJ Web Conf.},
+        year = 2018,
+        volume = 175,
+        pages = "09006",
+}
+
+@INPROCEEDINGS{alpaka2016, 
+author={E. {Zenker} and B. {Worpitz} and R. {Widera} and A. {Huebl} and G. {Juckeland} and A. {Knüpfer} and W. E. {Nagel} and M. {Bussmann}}, 
+booktitle={2016 IEEE International Parallel and Distributed Processing Symposium Workshops (IPDPSW)}, 
+title={Alpaka -- An Abstraction Library for Parallel Kernel Acceleration}, 
+year={2016}, 
+volume={}, 
+number={}, 
+pages={631-640}, 
+keywords={C++ language;parallel processing;source code (software);Alpaka C++ template interface;abstraction library for parallel kernel acceleration;abstract hierarchical redundant parallelism model;source code line;performance portability;Hardware;Graphics processing units;Parallel processing;Computational modeling;Libraries;Kernel;Data structures;Heterogeneous computing;HPC;C++;CUDA;OpenMP;platform portability;performance portability}, 
+doi={10.1109/IPDPSW.2016.50}, 
+ISSN={}, 
+month={May},}
+
+@misc{alpakagithub,
+  title        = {{Alpaka}},
+  year         = 2019,
+  note         = {Version 0.3.5},
+  url          = {https://github.com/ComputationalRadiationPhysics/alpaka}
+}
+
+@article{occa2014,
+  title={OCCA: A unified approach to multi-threading languages},
+  author={Medina, David S and St-Cyr, Amik and Warburton, Tim},
+  journal={arXiv preprint arXiv:1403.0968},
+  year={2014}
+}
+
+@misc{occagithub,
+  title        = {{OCCA}},
+  year         = 2019,
+  note         = {Version 1.0.9},
+  publisher    = {David Medina and Tim Warburton},
+  url          = {https://github.com/libocca/occa}
+}
+
+@article{raja2014,
+title = {ASC Tri-lab Co-design Level 2 Milestone Report 2015},
+author = {Hornung, Rich and Jones, Holger and Keasler, Jeff and Neely, Rob and Pearce, Olga and Hammond, Si and Trott, Christian and Lin, Paul and Vaughan, Courtenay and Cook, Jeanine and Hoekstra, Rob and Bergen, Ben and Payne, Josh and Womeldorff, Geoff},
+abstractNote = {In 2015, the three Department of Energy (DOE) National Laboratories that make up the Advanced Sci- enti c Computing (ASC) Program (Sandia, Lawrence Livermore, and Los Alamos) collaboratively explored performance portability programming environments in the context of several ASC co-design proxy applica- tions as part of a tri-lab L2 milestone executed by the co-design teams at each laboratory. The programming environments that were studied included Kokkos (developed at Sandia), RAJA (LLNL), and Legion (Stan- ford University). The proxy apps studied included: miniAero, LULESH, CoMD, Kripke, and SNAP. These programming models and proxy-apps are described herein. Each lab focused on a particular combination of abstractions and proxy apps, with the goal of assessing performance portability using those. Performance portability was determined by: a) the ability to run a single application source code on multiple advanced architectures, b) comparing runtime performance between \native" and \portable" implementations, and c) the degree to which these abstractions can improve programmer productivity by allowing non-portable implementation details to be hidden from the application developer. This report captures the work that was completed for this milestone, and outlines future co-design work to be performed by application developers, programming environment developers, compiler writers, and hardware vendors.},
+doi = {10.2172/1240955},
+journal = {},
+number = ,
+volume = ,
+place = {United States},
+year = {2015},
+month = {9}
+}
+
+@misc{rajagithub,
+  title        = {{RAJA Performance Portability Layer}},
+  year         = 2019,
+  note         = {Version 0.9.0},
+  publisher    = {Lawrence Livermore National Laboratories},
+  url          = {https://github.com/llnl/raja}
+}
+
+@article{kokkos2014,
+title = "Kokkos: Enabling manycore performance portability through polymorphic memory access patterns",
+journal = "Journal of Parallel and Distributed Computing",
+volume = "74",
+number = "12",
+pages = "3202 - 3216",
+year = "2014",
+note = "Domain-Specific Languages and High-Level Frameworks for High-Performance Computing",
+issn = "0743-7315",
+doi = "https://doi.org/10.1016/j.jpdc.2014.07.003",
+url = "http://www.sciencedirect.com/science/article/pii/S0743731514001257",
+author = "H. Carter Edwards and Christian R. Trott and Daniel Sunderland",
+keywords = "Parallel computing, Thread parallelism, Manycore, GPU, Performance portability, Multidimensional array, Mini-application",
+abstract = "The manycore revolution can be characterized by increasing thread counts, decreasing memory per thread, and diversity of continually evolving manycore architectures. High performance computing (HPC) applications and libraries must exploit increasingly finer levels of parallelism within their codes to sustain scalability on these devices. A major obstacle to performance portability is the diverse and conflicting set of constraints on memory access patterns across devices. Contemporary portable programming models address manycore parallelism (e.g., OpenMP, OpenACC, OpenCL) but fail to address memory access patterns. The Kokkos C++ library enables applications and domain libraries to achieve performance portability on diverse manycore architectures by unifying abstractions for both fine-grain data parallelism and memory access patterns. In this paper we describe Kokkos’ abstractions, summarize its application programmer interface (API), present performance results for unit-test kernels and mini-applications, and outline an incremental strategy for migrating legacy C++ codes to Kokkos. The Kokkos library is under active research and development to incorporate capabilities from new generations of manycore architectures, and to address a growing list of applications and domain libraries."
+}
+
+@misc{kokkosgithub,
+  title        = {{Kokkos: C++ Performance Portability Programming Model}},
+  year         = 2019,
+  note         = {Version 2.9.00},
+  publisher    = {Sandia National Laboratories},
+  url          = {https://github.com/kokkos/kokkos}
+}
