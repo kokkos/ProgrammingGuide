@@ -41,11 +41,11 @@ Older abstractions also take this approach---iterators, which have been central 
 References to entries in these matrices are obtained by giving a multi-index (that is, a set of indices) to `operator()` of the object, which has been overloaded for this purpose:
 
 ```c++
-// add 3.14 to the value on the row with index 10 and
-// the column with index 5
+// add 3.14 to the value on the row with index 10
+// and the column with index 5
 some_matrix(10, 5) += 3.14;
-// print the value of the entry in the row with index 0 and
-// the column with index 38
+// print the value of the entry in the row with
+// index 0 and the column with index 38
 printf("%f", some_matrix(0, 38));
 ```
 

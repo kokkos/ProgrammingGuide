@@ -14,4 +14,6 @@ section_to_tex conclusions
 section_to_tex introduction
 cd $mydir
 pdflatex $mydir/paper.tex
+bibtex paper
+pdflatex $mydir/paper.tex
 pdflatex $mydir/paper.tex

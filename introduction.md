@@ -6,7 +6,7 @@ Performance portability is one of the primary concerns of the high-performance c
 Over the last decade in particular, numerous projects[CITATIONNEEDED] have tried to address various challenges associated with it[CITATIONNEEDED]. 
 The urgency and importance of finding solutions to performance portability concerns has recently increased significantly with the announcement of the first exascale platforms, which feature at least four different node designs - with more to come.
 <!-- TODO: Make the second half of this sentence more concise. -->
-One of the projects which has found significant success in adoption is Kokkos,[CITATIONNEEDED] a C++ performance portable programming model originally developed at Sandia National Laboratories, but now maintained by a group spanning four US National Laboratories as well as the Swiss National Supercomputing Centre. 
+One of the projects which has found significant success in adoption is Kokkos,\cite{CarterEdwards20143202} a C++ performance portable programming model originally developed at Sandia National Laboratories, but now maintained by a group spanning four US National Laboratories as well as the Swiss National Supercomputing Centre. 
 
 Arguably the most significant innovation of the Kokkos project was its `View` data structure, a multi-dimensional array abstraction which addresses concerns of performance portability such as data layout and data access customization.
 <!-- TODO: Insert citation for "hundred HPC software projects", https://github.com/kokkos/kokkos/issues/1950, and make sure the numeric claim matches the citation. -->

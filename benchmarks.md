@@ -181,7 +181,7 @@ The effect of static extents on the compiler's ability to optimize can vary sign
 Results: Effect of Layout Abstraction
 -------------------------------------
 
-The benchmark in Figure \ref{layout-matvec} was run on the ARM ThunderX2 (test system Astra), Intel SkyLake (test system Blake), and NVIDIA TitanV (test sytem Apollo) platforms using OpenMP parallelization for the CPUs and CUDA for the GPU.
+The benchmark in Figure \ref{layout-matvec} was run on the ARM ThunderX2 (test system Astra), Intel SkyLake (test system Blake), and NVIDIA TitanV (test system Apollo) platforms using OpenMP parallelization for the CPUs and CUDA for the GPU.
 On the CPU systems the use of `layout_right` (for the matrix) provides the better performance, with `layout_left` being 3x-7x slower.
 On the GPU, however, the `layout_left` version achieves a 10x higher throughput.
 The results shown represent performance measured in terms algorithmic memory throughput (i.e., count memory accesses in the algorithm and divide by runtime).  
