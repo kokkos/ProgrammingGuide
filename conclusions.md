@@ -11,4 +11,5 @@ The standardization of `mdspan` lays the foundation for future efforts, includin
 Acknowledgements
 ================
 
-TODO write this section
+This work was carried out in part at Sandia National Laboratories.
+Sandia National Laboratories is a multimission laboratory managed and operated by National Technology & Engineering Solutions of Sandia, LLC, a wholly owned subsidary of Honeywell International Inc., for the U. S. Department of Energy's National Nuclear Security Administration under contract DE-NA0003525.
