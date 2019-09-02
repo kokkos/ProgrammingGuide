@@ -25,7 +25,7 @@ Examination of generated assembly (and, at least in the case of the Intel compil
 Methodology
 -----------
 
-All benchmarks were prepared and executed using the Google Benchmark microbenchmarking support library.[CITATIONNEEDED]
+All benchmarks were prepared and executed using the Google Benchmark microbenchmarking support library.\cite{googlebenchmark}
 Table \ref{machines} lists the test systems and compilers used for benchmarking.
 Unless otherwise stated, CPU benchmarks were run on Mutrino, and GPU benchmarks were run on Apollo.
 CPU benchmarks are serial unless labeled "OpenMP", in which case they were parallelized with the OpenMP `parallel for` directive on the outermost loop (with the intent of measuring typical basic usage of OpenMP).
@@ -105,7 +105,7 @@ for(ptrdiff_t i = 0; i < s.extent(0); i ++) {
 
 This benchmark performs the same operations as the `Sum3D` benchmark, but uses three calls to `subspan` rather than the normal means of dereferencing an `mdspan`.
 It is intended to stress the abstraction overhead (or lack thereof) in the implementation, since `subspan` is the most complex part of the `mdspan` implementation from a C++ perspective.
-Note that this is not the indended use case of the `subspan` function, though it serves as a reasonable worst case proxy.
+Note that this is not the intended use case of the `subspan` function, though it serves as a reasonable worst case proxy.
 The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output named `sum`, looks like:
 
 ```c++

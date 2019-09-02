@@ -134,7 +134,7 @@ A brief survey of existing practice (such as the BLAS technical standard [CITATI
 * symmetric layouts (e.g., from the `xSYMM` algorithms in BLAS), which also includes generalizations like whether the upper or lower triangle is stored (the `UPLO` parameter in BLAS) and whether the diagonal is stored explicitly, implicitly, or in some separate, contiguous storage.
 
 In addition to similarities, it is also instructive to look at what differences these layout mappings may introduce, which some algorithms may not be generic over.
-In general, as many previous researchers have noted [CITATIONNEEDED], the design of generic concepts for customization typically begins with the algorithms, not the data structures.
+In general, as many previous researchers have noted,\cite{sutton2011design} the design of generic concepts for customization typically begins with the algorithms, not the data structures.
 Much of the design of `LayoutMapping` can be motivated with some very simple algorithms.
 Consider an algorithm, `scale`, that takes an `mdspan` and a scalar and multiplies each entry, in place, by the scalar.
 For brevity, we will only consider the two-dimensional case here (though much of this motivation can be done even in the one-dimensional case).
