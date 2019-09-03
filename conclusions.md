@@ -10,7 +10,7 @@ Using a number of microbenchmarks, this work has demonstrated that the implement
 The implementation can be used with a C++11 standard-compliant compiler, and thus can be used with currently available toolchains on typical supercomputing systems.
 The standardization of `mdspan` lays the foundation for further efforts, such as standardized linear algebra,\cite{wg21_p1673} which can help to address future performance portability needs of HPC and heterogeneous computing use cases.
 
-Acknowledgements
+Acknowledgments
 ================
 
 This work was carried out in part at Sandia National Laboratories.
