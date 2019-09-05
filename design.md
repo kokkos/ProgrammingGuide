@@ -82,7 +82,7 @@ Just as `std::string` is actually a C++ alias for `std::basic_string`\cite{wg21_
 Whereas `std::mdspan` only provides control over the scalar type and the extents, `std::basic_mdspan` exposes more customization points. 
 <!-- TODO: s/accessor policy/accessor -->
 It is templated on four parameters: the scalar type, the extents object, the layout, and the accessor.
-In the following sections, we will describe these parameters and their value in improving performance or increasing portability.
+In the following sections, we will describe these parameters and their value for improving performance or increasing portability.
 
 ## Extents Class Template
 
@@ -102,7 +102,7 @@ void some_function(float* data) {
 The ability to provide extents statically can help significantly with compiler optimizations.
 For example, a compiler may be able to unroll small inner loops completely if the extents are known at compile time.
 Knowing exact counts and sizes can also help with vectorization and the optimizer's cost model.
-A typical example of this in HPC is operations on a batch of small matrices or vectors, where the dimensions of each item is dictated by a physics property or the way the system was discretized, rather than by the problem size.
+A typical example of this in HPC is operations on a batch of small matrices or vectors, where the dimensions of each item are dictated by a physics property or the way the system was discretized, rather than by the problem size.
 When this sort of problem interacts with generic code, such information would be lost unless static extents can be part of the `mdspan` type itself.
 The `TinyMatrixSum` benchmark (below) provides a proxy for problems with this sort of behavior.
 

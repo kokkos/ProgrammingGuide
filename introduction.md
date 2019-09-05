@@ -14,7 +14,7 @@ While maintaining these capabilities in an HPC-specific solution is workable for
 Doing so would enable tighter integration into other language and library capabilities, such as the proposed ISO C++ Linear Algebra library\cite{wg21_p1673}. It would simplify interface compatibility between different HPC products, and would further seamless integration with external products used in applications not specific to HPC.
 For example, the proposed ISO C++ Audio library\cite{wg21_p1386} has expressed interest in using this abstraction.
 
-To that end the Kokkos team initiated a collaboration with other stakeholders to design a multi-dimensional array for the ISO C++ Standard, that also addresses the concerns of performance portability addressed by Kokkos' `View`.
+To that end the Kokkos team initiated a collaboration with other stakeholders to design a multi-dimensional array for the ISO C++ Standard, that also addresses the concerns of performance portability addressed by the Kokkos `View` abstraction.
 The result of this over five-year process is `std::mdspan`, described herein and proposed to the ISO C++ standard in the proposal P0009\cite{wg21_p0009}. The design allows for a mix of static and dynamic array dimensions, enables control of the data layout, and has customization points to control how data are accessed. The latter includes use cases that involve hardware-specific special load and store paths.
 
 In this work we describe each of the design aspects of `mdspan`, with examples demonstrating their impact for performance and portability concerns, as well as benchmarks of the production-quality reference implementation developed by the authors.

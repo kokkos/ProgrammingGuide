@@ -66,17 +66,17 @@ for(ptrdiff_t i = 0; i < s.extent(0); ++i) {
 ### `Stencil3D` Benchmark
 
 This benchmark takes the sum of all of the neighboring points in three-dimensional space from an input `mdspan` and stores it in the corresponding entry of the output `mdspan`.
-In terms of structured grid computations, it has a "stencil size" of one.  The deduced index type is `ptrdiff_t`.
+In terms of structured grid computations, it has a "stencil size" of one (which is `d`, a `constexpr ptrdiff_t` variable known to the optimizer, in the code excerpe below). 
 The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output `mdspan` named `o`, looks like this:
 
 ```c++
-for(auto i = d; i < s.extent(0)-d; i ++) {
-  for(auto j = d; j < s.extent(1)-d; j ++) {
-    for(auto k = d; k < s.extent(2)-d; k ++) {
+for(ptrdiff_t i = d; i < s.extent(0)-d; i ++) {
+  for(ptrdiff_t j = d; j < s.extent(1)-d; j ++) {
+    for(ptrdiff_t k = d; k < s.extent(2)-d; k ++) {
       value_type sum_local = 0;
-      for(auto di = i-d; di < i+d+1; di++) {
-        for(auto dj = j-d; dj < j+d+1; dj++) {
-          for(auto dk = k-d; dk < k+d+1; dk++) {
+      for(ptrdiff_t di = i-d; di < i+d+1; di++) {
+        for(ptrdiff_t dj = j-d; dj < j+d+1; dj++) {
+          for(ptrdiff_t dk = k-d; dk < k+d+1; dk++) {
             sum_local += s(di, dj, dk);
           }
         }
@@ -105,7 +105,7 @@ for(ptrdiff_t i = 0; i < s.extent(0); i ++) {
 
 ### `Subspan3D` benchmark
 
-This benchmark performs the same operations as the `Sum3D` benchmark, but uses three calls to `subspan`, instead of accessing the entries of the `mdspan` in the "normal" way (`operator()` with three integer indices).
+This benchmark performs the same operations as the `Sum3D` benchmark, but uses two calls to `subspan`, instead of accessing the entries of the `mdspan` in the "normal" way (`operator()` with three integer indices).
 It is intended to stress the abstraction overhead (or lack thereof) in the implementation, since `subspan` is the most complex part of the `mdspan` implementation from a C++ perspective.
 Note that this is not the intended use case of the `subspan` function, though it serves as a reasonable worst-case proxy.
 The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output named `sum`, looks like this:
@@ -139,7 +139,7 @@ for(ptrdiff_t i = 0; i < A.extent(0); ++i) {
 When parallelizing the outer loop via OpenMP, C++17 standard parallel algorithms, or CUDA, the optimal layout depends on the hardware.
 On CPUs, the compiler will vectorize the inner loop over `j`; thus, unit-stride access on the second dimension of `A` is optimal.
 On GPUs, no implicit auto-parallelization happens, so unit-stride access on the first dimension is optimal.
-Being able to make this layout change in the type of `A`, without actually changing the algorithm, means that the algorithm can be generic over different architectures.
+Being able to make this layout change in the type of `A`---without actually changing the algorithm---means that the algorithm can be generic over different architectures.
 
 
 Results: Compiler Comparison
@@ -160,7 +160,7 @@ How the use of `mdspan` interacts with the compiler's heuristic for generating t
 \end{figure}
 ```
 
-In many ways, the optimizer brittleness in this single outlier presents a strong argument for the sort of genericity that `mdspan` provides.
+In many ways, the optimizer brittleness in this single outlier presents a strong argument for the sort of genericness that `mdspan` provides.
 As C++ continues to evolve, more compiler-specific extensions that let programmers give hints to guide compiler optimization are likely to trickle in.
 Maintaining such hints inside the logic of application code is often impractical or impossible, but incorporating that information into the `mdspan` accessor (particularly if such accessors can be vendor-provided), over which most algorithms can be generic, is a completely reasonable proposition in many cases.
 
@@ -186,7 +186,7 @@ Results: Effect of Layout Abstraction
 The benchmark in Figure \ref{layout-matvec} was run on the ARM ThunderX2 (test system Astra), Intel SkyLake (test system Blake), and NVIDIA TitanV (test system Apollo) platforms using OpenMP parallelization for the CPUs and CUDA for the GPU.
 On the CPU systems the use of `layout_right` (for the matrix) provides the better performance, with `layout_left` being 3x-7x slower.
 On the GPU, however, the `layout_left` version achieves a 10x higher throughput.
-The results shown represent performance measured in terms of algorithmic memory throughput (that is, the count of memory accesses in the algorithm, divided by run time.)
+The results shown represent performance measured in terms of algorithmic memory throughput (that is, the count of memory accesses in the algorithm divided by run time.)
 
 ```{=latex}
 \begin{figure}[htbp]
