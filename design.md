@@ -266,9 +266,9 @@ Similar to the infamous `std::vector<bool>`, the accessor abstraction can be use
 
 Heterogeneity often requires a program to access multiple, potentially disjoint memory spaces.
 Thus far, vendor-provided APIs for heterogeneity have tended to represent this memory with plain-old raw pointers.
-An important emerging paradigm in modern programming model design is so-called "strong types" (also called "opaque typedefs" or "phantom types"),\cite{strongTypes,phantomOrigin} wherein meaning is opaquely attached to the form of the type (for instance, `distance<double>` and `temperature<double>` would be different concrete types with the same form as `double`).
-Applied to heterogeneity, the paradigm would suggest replacing raw pointers with an opaque typedef indicating its compatibility, accessibility, and so on.
+An important emerging paradigm in modern programming model design is so-called "strong types" (also called "opaque typedefs" or "phantom types"),\cite{strongTypes,phantomOrigin} wherein meaning is opaquely attached to the form of the type. For instance, `distance<double>` and `temperature<double>` might be different concrete types that the compiler forbids mixing, even though they both would use `double` for storage and arithmetic.
+Applied to heterogeneity, the paradigm would suggest replacing raw pointers with opaque typedefs indicating things like their compatibility or accessibility.
 This not only introduces safety with respect to memory access by an execution resource, but also allows generic software design strategies where execution mechanisms can be deduced from the type of the data structure.
 In `mdspan`, such strong typing can be injected via the customization of the associated pointer type in the `Accessor`.
-Initially, of course, such extensions will be outside of the C++ standard (e.g., OpenMP, HIP, SYCL, and older versions of CUDA), but this design provides a means of forward compatibility if and when it addresses the concept of heterogeneous memory resources in the language.
+Initially, of course, such extensions will be outside of the C++ Standard (e.g., OpenMP, HIP, SYCL, and older versions of CUDA), but this design provides a means of forward compatibility if and when the Standard addresses the concept of heterogeneous memory resources natively in C++.
 
