@@ -171,7 +171,7 @@ After several design iterations,\cite{wg21_p0009} the authors came to the conclu
 Our exploration in this space began with a couple of specific use cases: a non-aliasing `Accessor`, similar to the `restrict` keyword in C,\cite{c18standard} and an atomic `Accessor`, where operations on the resulting reference use atomic operations.
  The former needs to customize the pointer type to include implementation-specific annotations (usually some variant of the C-style `restrict` keyword) that indicate the pointer does not alias pointers derived from other sources within the same context (usually a function scope).
 The latter needs to customize the reference type produced by the dereference operation to have it return a `std::atomic_ref<T>`.
-(`std::atomic_ref<T>` was merged into the C++ Standard working draft during the C++20 cycle, and will likely be officially approved as part of the C++20 balloting process when that process completes sometime in 2020\cite{wg21_p0019}. These requirements immediately led us to include customizable `reference` and `pointer` type names as part of the `Accessor` concept.
+(`std::atomic_ref<T>` was merged into the C++ Standard working draft during the C++20 cycle, and will likely be officially approved as part of the C++20 balloting process when that process completes sometime in 2020\cite{wg21_p0019}.) These requirements immediately led us to include customizable `reference` and `pointer` type names as part of the `Accessor` concept.
 Marrying these two customizations could take several forms. One possibility is to have a function that simply takes a `pointer` and returns a `reference`.
 However, this requires the `pointer` type to be arbitrarily offsettable---e.g., using `operator+` or `std::advance`.
 A simpler approach that removes this requirement is to have a customization point that takes the `pointer` and an offset and returns the `reference` directly.
@@ -260,7 +260,7 @@ struct AtomicAccessor {
 ### Accessor Use Case: Bit-Packing
 
 Similar to the infamous `std::vector<bool>`, the accessor abstraction can be used to return a fancy reference type that references individual bits packed into the bytes of underlying memory.
-(Unlike `std::vector<bool>`, though, `std::accessor_basic<bool>` does not do this by default).
+(Unlike `std::vector<bool>`, though, `std::accessor_basic<bool>` does not do this by default.)
 
 ### Accessor Use Case: Strong Pointer Types for Heterogeneous Memory Spaces 
 
