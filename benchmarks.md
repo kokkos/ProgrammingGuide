@@ -3,8 +3,9 @@ Benchmarks
 ==========
 A common complaint about C++ abstractions in HPC is that they hinder compiler optimizations.
 While that was largely true in the past, a number of developments have improved the situation.
-More recent C++ standards introduce capabilities and constraints which help the compiler optimize code, and with the widespread adoption of C++ abstraction layers in industry significant work has gone into optimizing the commonly used compilers.
-To demonstrate that `mdspan` does not introduce overheads compared to using raw pointers with manual indexing we will show benchmark results both for the version using `mdspan` and an equivalent implementation using raw pointers.
+More recent C++ standards introduce capabilities and constraints which help the compiler optimize code.
+Furthermore, with the widespread adoption of C++ abstraction layers in industry, significant work has gone into optimizing commonly used compilers.
+To demonstrate that `mdspan` does not introduce overheads compared to using raw pointers with manual indexing, we will show benchmark results both for the version using `mdspan` and an equivalent implementation using raw pointers.
  Since the difference in most benchmarks is very small, most figures in this section show overhead of the `mdspan` version over the raw pointer variant.
 Negative overhead indicates cases where the `mdspan` version was faster.
 
@@ -33,7 +34,7 @@ CPU benchmarks were compiled with GCC 8.2.0, Intel ICC 18.0.5, and the latest Cl
 GPU benchmarks were compiled with NVIDIA's NVCC version 10.1, using GCC 5.3.0 as the host compiler.
 The source code of all benchmarks is available on the mdspan implementation repository that accompanies this paper (see Implementation section above).
 A brief description of each benchmark is also included here for completeness.
-These benchmarks tend to focus on the three dimensional use case (which we view as the smallest "relatively non-trivial" number of dimensions), but spot checks with larger numbers of dimensions---up to 10---yielded similar results and led to similar conclusions.
+These benchmarks tend to focus on the three-dimensional use case (which we view as the smallest "relatively non-trivial" number of dimensions), but spot checks with larger numbers of dimensions---up to 10---yielded similar results and led to similar conclusions.
 
 ```{=latex}
 \begin{table}[htbp]
@@ -89,7 +90,7 @@ for(auto i = d; i < s.extent(0)-d; i ++) {
 ### `TinyMatrixSum` benchmark
 
 This benchmark applies a batched sum operation to large number of small (in this paper, 3x3) matrices, accumulating from the input Nx3x3 `mdspan` into an Nx3x3 `mdspan`.
-The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output `mdspan` named `o`, looks like:
+The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output `mdspan` named `o`, looks like this:
 
 ```c++
 for(ptrdiff_t i = 0; i < s.extent(0); i ++) {
@@ -103,10 +104,10 @@ for(ptrdiff_t i = 0; i < s.extent(0); i ++) {
 
 ### `Subspan3D` benchmark
 
-This benchmark performs the same operations as the `Sum3D` benchmark, but uses three calls to `subspan` rather than the normal means of dereferencing an `mdspan`.
+This benchmark performs the same operations as the `Sum3D` benchmark, but uses three calls to `subspan`, instead of accessing the entries of the `mdspan` in the "normal" way (`operator()` with three integer indices).
 It is intended to stress the abstraction overhead (or lack thereof) in the implementation, since `subspan` is the most complex part of the `mdspan` implementation from a C++ perspective.
-Note that this is not the intended use case of the `subspan` function, though it serves as a reasonable worst case proxy.
-The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output named `sum`, looks like:
+Note that this is not the intended use case of the `subspan` function, though it serves as a reasonable worst-case proxy.
+The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output named `sum`, looks like this:
 
 ```c++
 for(ptrdiff_t i = 0; i < s.extent(0); ++i) {
@@ -123,7 +124,7 @@ for(ptrdiff_t i = 0; i < s.extent(0); ++i) {
 ### `MatVec` benchmark
 
 
-The `MatVec` benchmark performs a simple dense matrix-vector multiply operation; it is aimed at demonstrating the impact of layout choice on performance, particularly in the context of performance portability of parallelization across diverse hardware platforms.
+The `MatVec` benchmark performs a simple dense matrix-vector multiply operation.  It is aimed at demonstrating the impact of layout choice on performance, particularly in the context of performance portability of parallelization across diverse hardware platforms.
 Consider this serial implementation:
 
 ```c++
@@ -135,9 +136,9 @@ for(ptrdiff_t i = 0; i < A.extent(0); ++i) {
 ```
 
 When parallelizing the outer loop via OpenMP, C++17 standard parallel algorithms, or CUDA, the optimal layout depends on the hardware.
-On CPUs the compiler will vectorize the inner loop over `j` and thus a unit-stride access on the second dimension of `A` is optimal.
-On GPUs no implicit auto-parallelization happens and thus the first dimension must be accessed with a unit stride.
-Being able to make this layout change in the type means that the algorithm can be generic over different architectures.
+On CPUs, the compiler will vectorize the inner loop over `j`; thus, unit-stride access on the second dimension of `A` is optimal.
+On GPUs, no implicit auto-parallelization happens, so unit-stride access on the first dimension is optimal.
+Being able to make this layout change in the type of `A`, without actually changing the algorithm, means that the algorithm can be generic over different architectures.
 
 
 Results: Compiler Comparison
@@ -147,7 +148,7 @@ Figure \ref{compiler-comparison} shows a comparison of `mdspan` overheads relati
 With the exception of the `TinyMatrixSum` benchmark using dynamic extents, overheads on all of the benchmarks were either completely or very nearly within the experimental noise.
 The outlier in this regard, `TinyMatrixSum` with dynamic extents, is an interesting case study in the brittleness of modern loop optimizers, whether or not C++ abstraction is involved.
 To a first approximation, the authors believe the explanation for this is as follows: if the compiler heuristic guesses that the inner loop sizes are too large, the resulting optimization decisions (such as the amount of unrolling) are inefficient for a 3x3 matrix.
-How the use of `mdspan` interacts with the compiler's heuristic for generating this guess varies from compiler to compiler; for instance, with the latest version of Clang, the optimizer actually happens to make a *better* guess, leading to a "negative overhead."
+How the use of `mdspan` interacts with the compiler's heuristic for generating this guess varies from compiler to compiler.  For instance, with the latest version of Clang, the optimizer actually happens to make a *better* guess, leading to a "negative overhead."
 
 ```{=latex}
 \begin{figure}[htbp]
@@ -158,9 +159,9 @@ How the use of `mdspan` interacts with the compiler's heuristic for generating t
 \end{figure}
 ```
 
-In many ways, the optimizer brittleness in this single outlier presents a strong argument for the sort of genericness that `mdspan` provides.
-As C++ continues to evolve, the sorts of hints and heuristic guidance to address this are likely to trickle in through compiler-specific extensions.
-Maintaining such hints inside the logic of application code is often impractical or impossible, but incorporating that information into the `mdspan` accessor (particularly if such accessors can be vendor-provided), which most algorithms can be generic over, is a completely reasonable proposition in many cases.
+In many ways, the optimizer brittleness in this single outlier presents a strong argument for the sort of genericity that `mdspan` provides.
+As C++ continues to evolve, more compiler-specific extensions that let programmers give hints to guide compiler optimization are likely to trickle in.
+Maintaining such hints inside the logic of application code is often impractical or impossible, but incorporating that information into the `mdspan` accessor (particularly if such accessors can be vendor-provided), over which most algorithms can be generic, is a completely reasonable proposition in many cases.
 
 Results: Effect of Static Extents
 ---------------------------------
@@ -175,7 +176,7 @@ Results: Effect of Static Extents
 ```
 
 Figure \ref{static-extents} shows the speedup achieved when using static extents for the two inner dimensions as opposed to dynamic extents.
-When providing them as static extents the compiler is able to fully unroll the inner loops and consequently achieve nearly two times better performance on the test system Mutrino.
+When programmers provide them as static extents, the compiler is able to unroll the inner loops fully, resulting in nearly two times better performance on the test system Mutrino.
 The effect of static extents on the compiler's ability to optimize can vary significantly from compiler to compiler based on design decisions internal to the compiler's implementation.
 
 Results: Effect of Layout Abstraction
@@ -184,7 +185,7 @@ Results: Effect of Layout Abstraction
 The benchmark in Figure \ref{layout-matvec} was run on the ARM ThunderX2 (test system Astra), Intel SkyLake (test system Blake), and NVIDIA TitanV (test system Apollo) platforms using OpenMP parallelization for the CPUs and CUDA for the GPU.
 On the CPU systems the use of `layout_right` (for the matrix) provides the better performance, with `layout_left` being 3x-7x slower.
 On the GPU, however, the `layout_left` version achieves a 10x higher throughput.
-The results shown represent performance measured in terms algorithmic memory throughput (i.e., count memory accesses in the algorithm and divide by runtime).  
+The results shown represent performance measured in terms of algorithmic memory throughput (that is, the count of memory accesses in the algorithm, divided by run time.)
 
 ```{=latex}
 \begin{figure}[htbp]
