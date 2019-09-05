@@ -75,14 +75,14 @@ auto my_matrix = subspan(my_tens,
 
 <!-- TODO: Maybe explain this a little more verbosely.-->
 The above snippet creates a 4 by 2 matrix sub-view of `my_tens` where the entries `i, j` correspond to index 2 in the first dimension of `my_tens`, index `i` in the second dimension, `j+2` in the third dimension, and `0` in the fourth dimension.
-This relatively verbose syntax for slicing was preferred over other approaches because slicing needs can vary substantially across different domains and domain-specific syntax can quite easily be built on top of this verbose and explicit syntax.
+This relatively verbose syntax for slicing was preferred over other approaches, because slicing needs can vary substantially across different domains. Domain-specific syntax can easily be built on top of `subspan`.
 
 Just as `std::string` is actually a C++ alias for `std::basic_string`\cite{wg21_is_14882:2017,cppreference_string_view}, `std::mdspan` is an alias for `std::basic_mdspan`.
 <!-- TODO: Be careful about using the terms customization points, abstractions. What term should we use for what the Allocator paramter of vector is? Figure out what Stepanov calls it.-->
 Whereas `std::mdspan` only provides control over the scalar type and the extents, `std::basic_mdspan` exposes more customization points. 
 <!-- TODO: s/accessor policy/accessor -->
 It is templated on four parameters: the scalar type, the extents object, the layout, and the accessor.
-In the following sections, we will describe these parameters and their utility in achieving higher performance or better portability. 
+In the following sections, we will describe these parameters and their value in improving performance or increasing portability.
 
 ## Extents Class Template
 
@@ -100,9 +100,9 @@ void some_function(float* data) {
 ```
 
 The ability to provide extents statically can help significantly with compiler optimizations.
-For example, a compiler may be able to completely unroll small inner loops if the extents are known at compile time.
+For example, a compiler may be able to unroll small inner loops completely if the extents are known at compile time.
 Knowing exact counts and sizes can also help with vectorization and the optimizer's cost model.
-A typical example of this in HPC is operations on a batch of small matrices or vectors, where the length of the dimensions is dictated by a physics property or the way the system was discretized (instead of the problem size).
+A typical example of this in HPC is operations on a batch of small matrices or vectors, where the dimensions of each item is dictated by a physics property or the way the system was discretized, rather than by the problem size.
 When this sort of problem interacts with generic code, such information would be lost unless static extents can be part of the `mdspan` type itself.
 The `TinyMatrixSum` benchmark (below) provides a proxy for problems with this sort of behavior.
 
@@ -110,9 +110,9 @@ The `TinyMatrixSum` benchmark (below) provides a proxy for problems with this so
 ## Layout abstraction
 
 <!--- TODO: Bryce doesn't like "be generic over". Bryce thinks he prefers "parameterize" or some phrasing that uses that term.-->
-Modern C++ design requires library authors to orthogonalize certain aspects of the design into customization points that algorithms may be generic over.
+Modern C++ design requires library authors to orthogonalize certain aspects of the design into customization points, over which algorithms may be written generically.
 The most commonplace example of this is the `Allocator` abstraction\cite{wg21_is_14882:2017,cppreference_allocator_ntr}, which controls memory allocation for standard containers like `std::vector`\cite{wg21_is_14882:2017,cppreference_vector}.
-Most algorithms on containers do not change regardless of how the underlying data is allocated, and the `Allocator` abstraction allows those algorithms to be generic over the form of memory allocation used by the container.
+Most algorithms on containers do not change regardless of how the underlying data is allocated. The `Allocator` abstraction allows such algorithms to be generic over the form of memory allocation used by the container.
 
 
 An example of one such aspect in the current context is the layout of the underlying data with respect to the multi-index domain.
@@ -128,30 +128,30 @@ GPUs need to coalesce accesses (that is, stride across execution agents) because
 The abstraction for representing data layout generically is called the `LayoutMapping`.
 The primary task of the `LayoutMapping` is to represent the transformation of a multi-index into a single, scalar memory offset.
 A large number of algorithms on multi-dimensional arrays have semantics that depend only on the data as retrieved through the multi-index domain, indicating that this transformation is a prime aspect for orthogonalization into a customization point.
-(Note that many algorithms have *performance* characteristics that depend on this transformation, but the separation of semantic aspects of an algorithm from its performance characteristics is critical to modern programming model design, and the fact that the `LayoutMapping` abstraction promotes this separation is further evidence of its utility as a customization point).
+(Note that many algorithms have *performance* characteristics that depend on this transformation, but the separation of semantic aspects of an algorithm from its performance characteristics is critical to modern programming model design. The fact that the `LayoutMapping` abstraction promotes this separation is further evidence of its utility as a customization point.)
 
-A brief survey of existing practice (such as the BLAS technical standard \cite{BLAS}, Eigen\cite{eigenweb}, and MAGMA\cite{magma}) reveals an initial set of layout mappings that such an abstraction must support, at minimum:
+A brief survey of existing practice (such as the BLAS Technical Standard \cite{BLAS}, Eigen\cite{eigenweb}, and MAGMA\cite{magma}) reveals an initial set of layout mappings that such an abstraction must support. These include, at minimum,
 
 * row-major or column-major layouts (represented by the `TRANS` parameters in BLAS), that generalize to describe layouts where the fast-running index is left-most or right-most;
 * strided layouts (represented by the `LD` parameters in BLAS), that generalize to any in a class of layouts that can describe the distance in memory between two consecutive indices in a particular dimension with a constant (specific to that dimension); and
 * symmetric layouts (e.g., from the `xSYMM` algorithms in BLAS), which also include generalizations like whether the upper or lower triangle is stored (the `UPLO` parameter in BLAS) and whether the diagonal is stored explicitly, implicitly, or in some separate, contiguous storage.
 
-In addition to similarities, it is also instructive to look at what differences these layout mappings may introduce, which some algorithms may not be generic over.
+In addition to similarities, it also helps to look at what differences these layout mappings may introduce, over which some algorithms may not be generic.
 In general, as many previous researchers have noted,\cite{sutton2011design} the design of generic concepts for customization typically begins with the algorithms, not the data structures.
 Much of the design of `LayoutMapping` can be motivated with some very simple algorithms.
 Consider an algorithm, `scale`, that takes an `mdspan` and a scalar and multiplies each entry, in place, by the scalar.
 For brevity, we will only consider the two-dimensional case here (though much of this motivation can be done even in the one-dimensional case).
 If such an algorithm is to be implemented in the simplest possible way---iterating over the rows and column indices and scaling each element---the implementation would fail to meet the semantic requirements of the algorithm for symmetric layouts, since non-diagonal entries reference the same memory.
-Thus, it is necessary for certain algorithms to know whether each multi-index in the domain maps to a unique offset in the codomain (the space of all offsets that the mapping can result in).
+Thus, it is necessary for certain algorithms to know whether each multi-index in the domain maps to a unique offset in the codomain (the space of all offsets that could be valid results of the mapping).
 (An example of an algorithm for which this requirement is *not* needed is `dot_product`.)
 The `LayoutMapping` customization expresses this property through the requirement that it provide an `is_unique` method.
 Many algorithms are difficult or impossible to implement on general non-unique layouts.
-However, in the simple case of `scale` the algorithm *could* be implemented for any layout that is simply *contiguous* by viewing the codomain of the layout as a one-dimensional `mdspan` and scaling each item that way.
+However, in the simple case of `scale`, the algorithm *could* be implemented for any layout that is simply *contiguous*, by viewing the codomain of the layout as a one-dimensional `mdspan` and scaling each item that way.
 Contiguousness is expressed through the requirement of an `is_contiguous` method, and the size of the codomain is expressed through the `required_span_size` required method.
-Similarly, as previously observed, many existing implementations (such as the BLAS) can specially handle any layout with regular strides; layout mappings can express whether they are strided using the `is_strided` method.
+Similarly, as previously observed, many existing implementations (such as the BLAS) can specially handle any layout with regular strides. Layout mappings can express whether they are strided using the `is_strided` method.
 Finally, all of these aspects need to be expressible statically and dynamically, so for layout mappings where the uniqueness, stridedness, and continguousness are consistently `true` for all instances of the type, the `is_always_unique`, `is_always_strided`, and `is_always_contiguous` hooks are provided in the concept.
-These requirements allow, for instance, algorithms that cannot support layouts lacking certain properties to fail at compile time rather than runtime.
-The requirements on the `LayoutMapping` concept are summarized in table \ref{layoutreqs}.
+These requirements allow, for instance, algorithms that cannot support layouts lacking certain properties to fail at compile time rather than run time.
+The requirements on the `LayoutMapping` concept are summarized in Table \ref{layoutreqs}.
 
 
 ```{=latex}
