@@ -200,8 +200,8 @@ Results: Overhead of `subspan`
 ------------------------------
 
 For recent versions of GCC and Clang, the results are essentially identical to the raw pointer implementation of `Sum3D`, as shown in Figure \ref{subspan-gcc-and-clang}.
-(Note that there is no raw pointer implementation of `Subspan3D`, since the whole point is that it would be identical to `Sum3D`).
-For ICC 18.0.5, the results showed significant overhead, rendering the GCC and clang results invisible---as much as 400%.
+(There is no raw pointer implementation of `Subspan3D`, since the whole point is that it would be identical to `Sum3D`.)
+For ICC 18.0.5, the results showed significant overhead, rendering the GCC and Clang results invisible---as much as 400%.
 (The absolute magnitudes of the raw pointer timings were similar across all three compilers, so this is a genuine measurement of overhead introduced by the ICC frontend).
 Using the more recent ICC 19.0.3.199, we were able to obtain much more reasonable results in C++17 mode.
 Interestingly, though, the C++14 results *with the same compiler version* were much more similar to the ICC 18.0.5 results, indicating that the difference arises, at least in part, from more modern C++ abstractions being easier for modern compilers to understand.
