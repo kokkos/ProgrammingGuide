@@ -66,7 +66,7 @@ for(ptrdiff_t i = 0; i < s.extent(0); ++i) {
 ### `Stencil3D` Benchmark
 
 This benchmark takes the sum of all of the neighboring points in three-dimensional space from an input `mdspan` and stores it in the corresponding entry of the output `mdspan`.
-In terms of structured grid computations, it has a "stencil size" of one (which is `d`, a `constexpr ptrdiff_t` variable known to the optimizer, in the code excerpe below). 
+In terms of structured grid computations, it has a "stencil size" of one (which is `d`, a `constexpr ptrdiff_t` variable known to the optimizer, in the code excerpt below). 
 The relevant portion of the source code for this benchmark, for an input `mdspan` named `s` and an output `mdspan` named `o`, looks like this:
 
 ```c++
