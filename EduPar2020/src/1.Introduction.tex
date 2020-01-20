@@ -1,0 +1,29 @@
+
+\section{Introduction}\label{chap:introduction}
+
+Parallel and distributed computing moved into focus at universities and teaching institutions. The interest is two-fold. Firstly, given their role, educators adapt to trends in research and industry and include parallel computing in their curricula, and secondly, parallel computing is an attractive field for department research and industry collaborations. 
+
+While industry-driven collaborations often predefine technological frameworks such as programming environments and targeted architectures, academic teaching leaves this mostly undefined. In this case, educators are exposed to a variety of solutions, approaches and trends in parallel computing. Which particular set to choose for teaching in class is not trivial. While decision factors differ, maximizing the subject relevance by teaching generic principles of parallel programming generically is among the most important ones. 
+
+Consequently, generic parallel programming models are needed that target mainstream programming languages and allow a vendor- and architecture independent, performance-portable expression of concurrency. In this way, a parallel program written in a popular language becomes capable of running efficiently on parallel computer architectures that conform to a common parallel machine model specification. We would like to compare this to the support of Von Neumann architectures in programming languages today. We define a abstract machine model later in this work. The lack of such parallel programming models motivated us to develop Kokkos.
+
+Kokkos\footnote{from Greek for grain or seed}~\cite{KOKKOS_PAPER_HERE}, is a performance-portable, parallel programming model for C++ developed at Sandia National Laboratories (SNL). It consists of a programming model specification and a library. The specification defines execution- and memory model and an application programming interface (library API). The runtime library exposes programming primitives, namely, patterns and types and maps them to the underlying abstract machine model. The machine model creates a generic view of compute hardware and memories. The Kokkos library mapps execution primitives to vendor-specific programming models, libraries and memory layouts. Kokkos has been successfully used in many large-scale projects at SNL, LLNL and other research centers~\cite{CITEKOKKOSUSECASES}. We list its key properties as follows.
+
+\begin{itemize}
+\item Parallel programming model for C++
+\item Targets an abstract machine model
+\item Implements a parallel-patterns and tasking paradigms
+\item Offers abstract data types for performance portability
+\item Pure C++ implementation through template meta programming
+\item Aligns with to C++ standardization efforts for parallel programming
+\item Vendor- and architecture independent and open-source
+\item Includes exercises and teaching material
+\end{itemize}
+
+The objective of this paper is to present Kokkos from two perspectives. Firstly, we would like to present our thoughts that accompanied the design and development of the Kokkos parallel programming model. This insights may be considered useful in parallel programming classes that introduce programming models and reason about design choices.
+
+Further, we would like to present Kokkos to the educational community as one representative parallel programming model for a trend towards architecture-independent and performance-portable programming of CPUs and accelerators. We show a set of types that implement patterns and encapsulate data with enough semantic information to produce performance-portable, parallel code on current architectures. Further, we highlight its alignment and contributions to standardization efforts towards supporting parallel programming in C++. 
+
+Secondly, we would like to promote Kokkos to students as a platform to understand and experiment with parallel patterns and types. Type specialization through templating allows to experiment with memory layouts and investigate their performance implications. Further, its modular code organization and open access under the BSD license allow students to peak behind the scenes and explore the mappings of abstractions to a variety of vendor-specific implementations. We believe that this makes Kokkos a valuable programming model for students to reason about vendor-provided programming models and to see them as particular implementations of higher abstractions in a parallel programming landscape.
+
+This rest of the paper is structured as follows. The next Chapter gives an overview on parallel programming concepts and present the notion of \emph{semantic capture}. Chapter~\ref{chap:kokkosMM} presents the abstract machine model used to derive required semantic information for performance portability in Kokkos. Chapters~\ref{chap:kokkosPM} and ~\ref{chap:kokkosBackend} present the Kokkos programming model and its back-end support. Chapter~\ref{chap:C++} shows the alignment to C++ standardization efforts and lastly Chapter~\ref{chap:conclusion} concludes this work.
