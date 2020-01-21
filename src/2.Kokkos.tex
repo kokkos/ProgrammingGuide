@@ -81,71 +81,29 @@ How a machine model is exposed to the programmer and what are the design conside
 
 \section{The Kokkos Programming Model}\label{chap:kokkosPM}
 %====================
+The Kokkos programming model specifies a language, programming paradigm and an API. The API exposes the abstract machine model to the developer and defines a set of pattens and types to captures intents and properties of execution. This completes the semantic capture, discussed in Chapter~\ref{chap:background}, We detail all three components as follows.
 
-%The Kokkos programming model defines a programming language, paradigm and semantic information. Its design has been motivated by the desire to develop a generic, performance portable programming model that would be convenient enough to the programmer and allow a runtime library to map programming concepts and execution to the underlying abstract machine model at the same time. We take a closer look as follows.
-The Kokkos programming model specifies a language, programming paradigm and an API that captures intents and properties of execution. This completes the semantic capture, discussed in Chapter~\ref{chap:background}, which allows the expression of concurrency and efficient program execution on the underlying hardware. We detail all three comments as follows.
+Kokkos defines a pure interface for C++ and uses C++ as the base programming language. This has multiple reasons. Foremost, application developers of scientific and high-performance computing applications at Sandia National Laboratories expressed the demand for C++ and a generic programming model to support their codes. Following their estimates, porting efforts towards adapting to vendors, programming models, APIs and software releases represents a burden worth addressing. Further, the possibility to maintain pure C++ codes is appealing from the code development and debugging perspective. 
+Lastly, from the programming model perspective, C++ offers template meta programming which is well suited to implement generic APIs and libraries. In this case, class specialization and templating allow for compile-type generated types and optimizations for a given hardware architecture. It is worth to mention that Kokkos avoids the use of pragma annotations for the sake of treating concurrency as a first-class concept in C++. 
 
-Kokkos defines a pure interface for C++ and uses C++ as the base programming language. This has multiple reasons. Firstly, application developers of scientific and high-performance computing applications at Sandia National Laboratories expressed the demand for C++ and a generic programming model in order to support their codes. Following their estimates, code porting to changing vendor APIs represents an anacceptable burden and the possibility to  
-
-Other reasons exist. From the implementation persoecte, C++ allows meta programming which is well suited to implement generic APIs and libraries. In this case, class specialization and teplating allows to compiler-generate optimized intefaces libraries for a given underlying hardware architecture. This effectively allows for compile time transformation of algorithms to allow for adaptions of varying degrees of hardware parallelism as well as of the memory hierarchy.
-Consequently, while Kokkos targets C++, we believe that any programming language can be used to express the paradigms and semantic information to efficenly support the abstravt machine model.
-
-Kokkos supports the parallel patterns and task paradigms. Parallel patters covers \emph{for}, \emph{ scan} and \emph{reduction}. This allows the expression on concurrency over iterative, for-loop computable algorithms. To cover the class of while-loop computable algorithms (irregular algorithms), Kokkos implements the tasking paradigm. Tasks encapsulate work into units that may be executed in parallel to other tasks or sections of the program.
-
-These  concepts allow the formulation of generic algorithms and data structures which can then be mapped to different types of architectures. Effectively, they allow for compile time transformation of algorithms to allow for adaptions of varying degrees of hardware parallelism as well as of the memory hierarchy.
+Using the programming language, a parallel programming paradigm can be applied to simplify the process of of thought. Kokkos supports the parallel patterns and task paradigms. Parallel patters covers \emph{for}, \emph{ scan} and \emph{reduction}. This allows the expression on concurrency over iterative, for-loop computable algorithms. To cover the class of while-loop computable algorithms (irregular algorithms), Kokkos implements the tasking paradigm. Tasks encapsulate work into units that may be executed in parallel to other tasks or sections of the program. Equipped with a language and set of paradigms, a particular set of abstractions can be defined that exposes the abstract machine model and captures the intent of the programmer.
 
 
-C++ because popular (perf critical code in industry)
-Use-case (SNL)
-Language features are present and first-class citizen. 
-Allow to make the PM as part of the language -> type information | overloading ops
-No Source2source compiler needed
-Template mechanisms / type / meta info: to write abstractions 
-template meta programming privde a library to implement the progamming mdoel
-- pure way to suppport the machine model
-- not tide to a specific implementation of underlying hardware
-- No additional semantics through pragma annotations
+\subsection{Kokkos Abstractions}
 
-\section{Kokkos Abstractions}
+To capture semantic information, that is the~\emph{What}, the ~\emph{Where} and the ~\emph{How}, Kokkos introduces six abstractions: \emph{execution spaces}, \emph{execution patterns}, \emph{execution policies}, \emph{memory spaces}, \emph{memory layout} and \emph{memory traits}. These abstractions specify semantic information that enable to capture the programmer's intent and the runtime to efficiently map the program to any underlying hardware architecture. We list them as follows:
+\begin{itemize}
+	\item  An execution space is a place where code can be executed. On current hardware architectures this correspond to accelerators and CPUs and can include any compute device in the future. This abstraction supports remote compute devices in distributed memory scenarios as remote executiuon spaces.
+	\item Execution patterns expose the parallel programming paradigm. Supported patterns are \emph{parallel\_for} loop that executes the loop body in any order a specified amount of times, the \emph{parallel\_reduce} which combines a parallel\_for with a reduction operation, \emph{parallel\_scan} which combines a parallel\_for operation with a prefix or postfix scan, and \emph{task} which executes a single function potentially in parallel in respect to other tasks or code sections. 
+	\item Execution policy shape the iteration space of a loop pattern. A simple execution policy is a range policy. It specifies that the loop body is execution once for each element in a range. 
+	\item Memory spaces are the places where data resides. They specify physical locations of data as well as access characteristics. Different physical locations correspond to different device types such as high bandwidth memories, on-die scratch memories or non-volatile bulk storage. Different logical memory spaces allow for concepts such as UVM memory in the CUDA programming model, which is accessible from the host and the CUDA accelerator. Memory spaces, similarly to execution spaces, conceptually support remote memory locations in distributed-memory scenarios. Furthermore, they encapsulate functionality such as consistency control and persistence scopes.
+	\item Layouts express the mapping from loop indices to address offsets. By adopting appropriate layouts for memory structures, an application can optimize data access patterns in a given algorithm. If an implementation provides polymorphic layouts (i.e. a data structure can be instantiated at compile or runtime with different layouts), architecture-dependent optimizations can be performed.
+	\item Memory traits specify how a data structure is accessed. Traits express usage scenarios such as atomic access, random access and streaming loads or stores. This allows the programming model to  optimize load and store operations.
 
-To capture semantic information, that is the~\emph{What}, the ~\emph{Where} and the ~\emph{How}, Kokkos introduces  six abstractions: \emph{execution spaces}, \emph{execution patterns}, \emph{execution policies}, \emph{memory spaces}, \emph{memory layout} and \emph{memory traits}. These abstractions specify semantic information and enable the runtime to efficiently map the program to any underlying hardware architecture represented by abstract machine model. We take a closer look as follows.
-
-An execution space is a place where code can be executed. On current hardware architectures this correspond to accelerators and CPUs. In the future this can include Processing in Memory (PIM) modules or different core types on a heterogeneous CPU. This model allows to include computing elements In principle, execution spaces can include remote execution spaces to support e.g., the capability of sending work to a different node. Execution Spaces thus give an application developer the means to target different parts of a heterogeneous hardware architecture. This corresponds directly to the previously described machine model.
-
-Execution patterns are the fundamental parallel algorithms in which an application has to be expressed. Examples are the parallel\_for: execute a function in undetermined order a specified amount of times,
-parallel\_reduce: which combines a parallel\_for execution with a reduction operation,
-parallel\_scan: which combines a parallel\_for operation with a prefix or postfix scan on output values of each operation, and
-task: which executes a single function with dependencies on other functions.
-Expressing an application in these patterns allows the underlying implementation or the used compiler to reason about valid transformations. For example all parallel\_*** patterns allow unspecified execution order and only promise deterministic results of the reductions themselves. This enables different mapping patterns on different hardware such as assignment of iterations to threads or vector lanes.
-
-An execution policy determines, together with an execution pattern, how a function is executed. Some policies can be nested in others. The most simple form of execution policies are range policies. They are used to execute an operation once for each element in a range. There are no prescriptions of order of execution or concurrency, which means that it is not legal to synchronize different iterations.
-
-Team policies are used to implement hierarchical parallelism. For that purpose Kokkos groups threads into teams. A thread team is a collection of one or more parallel "threads" of execution. Kokkos allows an arbitrary number of teams - the league size. Hardware constrains the number of threads in a team - the team size. All threads in a team are guaranteed to run concurrently.
-
-Memory spaces are the places where data resides. They specify physical location of data as well as access characteristics. Different physical locations correspond to different device types such as high bandwidth memories, on-die scratch memories or non-volatile bulk storage. Different logical memory spaces allow for concepts such as UVM memory in the CUDA programming model, which is accessible from the host and the CUDA accelerator. Memory Spaces, similarly to execution spaces, conceptually support remote memory locations in distributed-memory scenarios. Furthermore, they encapsulate functionality such as consistency control and persistence scopes.
-
-Layouts express the mapping from logical (algorithmic) indices to address offset for a data allocation. By adopting appropriate layouts for memory structures, an application can optimize data access patterns in a given algorithm. If an implementation provides polymorphic layouts (i.e. a data structure can be instantiated at compile or runtime with different layouts), an architecture dependent optimization can be performed.
-
-Memory traits specify how a data structure is accessed in an algorithm. Traits express usage scenarios such as atomic access, random access and streaming loads or stores. By putting such attributes on data structures, an implementation of the programming model can insert optimal load and store operations. If a compiler implements the programming model, it could reason about the access modes and use that to inform code transformations.
-
-These concepts allow the generic formulation of algorithms and data structures that can be mapped to the any hardware architecture that can be abstracted through the machine model.. Effectively, they allow for compile time transformation of algorithms to allow for adaption of varying degrees of hardware parallelism as well as of the memory hierarchy.
+\end{itemize}
+Expressing an application in these types and patterns allows the compiler and the runtime library to generate optimized transformations. In the case of parallel patterns, the execution is unspecified and only promise deterministic results for the scan and reduction operations. This gives the freedom to the underlying abstraction layers to implement different mapping patterns on different hardware such as assignment of iterations to threads or vector lanes. 
 
 
-%\begin{figure}
-%\begin{Verbatim}[frame=leftline]
-%T main(int argc, char** argv)
-%{
-% agent<T> a, b;
-% a.SetInput(b.GetOutput());
-% a.start();
-% b.start();
-% agent::wait(&a);
-% return a.out();
-%}
-%\end{Verbatim}
-%\caption{The actor-based programming paradigm builds upon the idea of isolation and message-passing which is considered a contribution towards helping developers to write correct code, to express unstructured parallelism and to support the execution on distributed memory systems.}
-%\label{figAgentsLike}
-%\end{figure}
 
 \begin{figure}[h]
 \begin{Verbatim}[frame=leftline]
@@ -160,12 +118,13 @@ Language: C++
 
 \begin{figure}
 \begin{Verbatim}[frame=leftline]
-parallel_for <ExecutionSpace<>>
-parallel_scan <>
-parallel_reduce <>
-task <>
+template <class ExecPolicy, class FunctorType>
+Kokkos::parallel_for(
+    const std::string& name, 
+    const ExecPolicy& policy, 
+    const FunctorType& functor);
 \end{Verbatim}
-\caption{The Kokkos programming model uses template meta programming to specialize types for  exposes concurrency through parallel patterns and tasking in the C++ base language.}
+\caption{The Kokkos parallel for loop class shows how template meta programming allows to specialize types. Its descriptive semantic offers the freedom to optimize execution on modern architectures with multiple degrees of concurreny where an Execution policy shapes the iteration space accordingly.}
 \label{fig}
 \end{figure}
 
@@ -225,16 +184,12 @@ task <>
 \end{figure}
 
 
-The Kokkos semantic capture des
-
-
- While design choices regarding the language and programming paradigm address requirements posed by developers in scientific computing, the set semantic information required is defined by the need to support the abstract machine model. 
 
 Figure\ref{fig:stack} shows abstraction layers in Kokkos and its fit in a parallel programming landscape.
-The next Chapter shows an example application written in Kokkos and provides an insight into the runtime library.
+The next Chapter shows an example application written in Kokkos and provides an insight into the runtime library. For the interested reader, the complete programming model specification can be accessed on-line\cite{pub:KOKKOS}.
 
 
-\section{Back-end Support}\label{chap:kokkosBackend}
+\subsection{Back-end Support}\label{chap:kokkosBackend}
 
 
 The important consideration here is that the method of compiling code for different execution spaces and the dispatch of kernels to instances is abstracted by the Kokkos model. This unburdens application programmers from writing algorithms in hardware specific languages.
