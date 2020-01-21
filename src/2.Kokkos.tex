@@ -103,8 +103,6 @@ To capture semantic information, that is the~\emph{What}, the ~\emph{Where} and 
 \end{itemize}
 Expressing an application in these types and patterns allows the compiler and the runtime library to generate optimized transformations. In the case of parallel patterns, the execution is unspecified and only promise deterministic results for the scan and reduction operations. This gives the freedom to the underlying abstraction layers to implement different mapping patterns on different hardware such as assignment of iterations to threads or vector lanes. 
 
-
-
 \begin{figure}[h]
 \begin{Verbatim}[frame=leftline]
 Semantic information: Patterns (intent), Spaces, Layouts, 
