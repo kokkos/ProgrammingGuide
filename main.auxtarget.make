@@ -4,7 +4,7 @@
 \newlabel{chap:conclusion}
 \newlabel{chap:introduction}
 \newlabel{chap:kokkosBackend}
-\newlabel{chap:kokkosEMA}
+\newlabel{chap:kokkosMM}
 \newlabel{chap:kokkosPM}
 \newlabel{chap:related}
 \newlabel{chap:tutorial}

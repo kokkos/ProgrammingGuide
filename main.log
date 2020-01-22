@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.14159265-2.6-0.999991 (TeX Live 2019) (preloaded format=xelatex 2019.5.8)  22 JAN 2020 16:20
+This is XeTeX, Version 3.14159265-2.6-0.999991 (TeX Live 2019) (preloaded format=xelatex 2019.5.8)  22 JAN 2020 16:36
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -369,11 +369,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 17--18
 [1
 
 
-]
-
-LaTeX Warning: Reference `chap:kokkosMM' on page 2 undefined on input line 29.
-
-) (./src/2.GenericProgramming.tex
+]) (./src/2.GenericProgramming.tex
 
 LaTeX Warning: Citation `CITEOPENMP' on page 2 undefined on input line 5.
 
@@ -383,22 +379,28 @@ LaTeX Font Info:    No file TUpcr.fd. on input line 8.
 LaTeX Font Warning: Font shape `TU/pcr/m/n' undefined
 (Font)              using `TU/lmr/m/n' instead on input line 8.
 
-[2]) (./src/3.Kokkos.tex [3]
-
-LaTeX Warning: Citation `pub:KOKKOS' on page 4 undefined on input line 56.
-
-File: img/Stack.png Graphic file (type bmp)
-<img/Stack.png>
-) (./src/4.ExecutionModel.tex [4]
+[2]) (./src/3.MachineModel.tex
 File: img/ExecSpaces.png Graphic file (type bmp)
 <img/ExecSpaces.png>
 File: img/MemSpaces.png Graphic file (type bmp)
 <img/MemSpaces.png>
+) (./src/4.ProgammingModel.tex [3]
+Underfull \vbox (badness 1902) has occurred while \output is active []
+
+[4]
+
+LaTeX Warning: Citation `pub:KOKKOS' on page 5 undefined on input line 56.
+
+File: img/Stack.png Graphic file (type bmp)
+<img/Stack.png>
 ) (./src/5.Backend.tex
 File: img/Build.png Graphic file (type bmp)
 <img/Build.png>
-) (./src/6.Exercises.tex) (./src/7.C++.tex [5]) (./src/8.Related.tex) (./src/9.
-Conclusion.tex)
+) (./src/6.Exercises.tex) (./src/7.C++.tex) (./src/8.Related.tex) (./src/9.Conc
+lusion.tex)
+Underfull \vbox (badness 1748) has occurred while \output is active []
+
+[5]
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -421,10 +423,10 @@ LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 5054 strings out of 492916
- 77399 string characters out of 6133346
- 160874 words of memory out of 5000000
- 9024 multiletter control sequences out of 15000+600000
+ 5053 strings out of 492916
+ 77404 string characters out of 6133346
+ 163874 words of memory out of 5000000
+ 9023 multiletter control sequences out of 15000+600000
  11370 words of font info for 58 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  42i,11n,40p,1248b,426s stack positions out of 5000i,500n,10000p,200000b,80000s

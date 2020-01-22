@@ -25,23 +25,23 @@ main.aux main.aux.make main.d main.pdf: $(call path-norm,main.tex)
 main.aux main.aux.make main.d main.pdf: $(call path-norm,src/0.Abstract.tex)
 main.aux main.aux.make main.d main.pdf: $(call path-norm,src/1.Introduction.tex)
 main.aux main.aux.make main.d main.pdf: $(call path-norm,src/2.GenericProgramming.tex)
-main.aux main.aux.make main.d main.pdf: $(call path-norm,src/3.Kokkos.tex)
-main.aux main.aux.make main.d main.pdf: $(call path-norm,src/4.ExecutionModel.tex)
+main.aux main.aux.make main.d main.pdf: $(call path-norm,src/3.MachineModel.tex)
+main.aux main.aux.make main.d main.pdf: $(call path-norm,src/4.ProgammingModel.tex)
 main.aux main.aux.make main.d main.pdf: $(call path-norm,src/5.Backend.tex)
 main.aux main.aux.make main.d main.pdf: $(call path-norm,src/6.Exercises.tex)
 main.aux main.aux.make main.d main.pdf: $(call path-norm,src/7.C++.tex)
 main.aux main.aux.make main.d main.pdf: $(call path-norm,src/8.Related.tex)
 main.aux main.aux.make main.d main.pdf: $(call path-norm,src/9.Conclusion.tex)
 .SECONDEXPANSION:
--include img/Stack.png.gpi.d
-main.d: $$(call graphics-source,img/Stack.png)
-main.pdf main._graphics: $$(call graphics-target,img/Stack.png)
 -include img/ExecSpaces.png.gpi.d
 main.d: $$(call graphics-source,img/ExecSpaces.png)
 main.pdf main._graphics: $$(call graphics-target,img/ExecSpaces.png)
 -include img/MemSpaces.png.gpi.d
 main.d: $$(call graphics-source,img/MemSpaces.png)
 main.pdf main._graphics: $$(call graphics-target,img/MemSpaces.png)
+-include img/Stack.png.gpi.d
+main.d: $$(call graphics-source,img/Stack.png)
+main.pdf main._graphics: $$(call graphics-target,img/Stack.png)
 -include img/Build.png.gpi.d
 main.d: $$(call graphics-source,img/Build.png)
 main.pdf main._graphics: $$(call graphics-target,img/Build.png)
