@@ -91,7 +91,20 @@ Using the programming language, a parallel programming paradigm can be applied t
 
 \subsection{Kokkos Abstractions}
 
-To capture semantic information, that is the~\emph{What}, the ~\emph{Where} and the ~\emph{How}, Kokkos introduces six abstractions: \emph{execution spaces}, \emph{execution patterns}, \emph{execution policies}, \emph{memory spaces}, \emph{memory layout} and \emph{memory traits}. These abstractions specify semantic information that enable to capture the programmer's intent and the runtime to efficiently map the program to any underlying hardware architecture. We list them as follows:
+\begin{figure}
+\begin{Verbatim}[frame=leftline]
+template <class ExecPolicy, class FunctorType>
+Kokkos::parallel_for(
+    const std::string& name, 
+    const ExecPolicy& policy, 
+    const FunctorType& functor);
+\end{Verbatim}
+\caption{The Kokkos parallel for loop class shows how template metaprogramming allows to specialize types. Its descriptive semantic offers the freedom to optimize execution on modern architectures with multiple degrees of concurrency where an Execution policy shapes the iteration space accordingly.}
+\label{fig:parallelForKokkos}
+\end{figure}
+
+
+To capture semantic information, that is the~\emph{What}, the~\emph{Where} and the~\emph{How}, Kokkos introduces six abstractions:~\emph{execution spaces},~\emph{execution patterns},~\emph{execution policies},~\emph{memory spaces},~\emph{memory layout} and~\emph{memory traits}. These abstractions specify semantic information that enable to capture the programmer's intent and allow the runtime to efficiently map the program to any underlying hardware architecture. We list them as follows:
 \begin{itemize}
 	\item  An execution space is a place where code can be executed. On current hardware architectures this correspond to accelerators and CPUs and can include any compute device in the future. This abstraction supports remote compute devices in distributed memory scenarios as remote execution spaces.
 	\item Execution patterns expose the parallel programming paradigm. Supported patterns are \emph{parallel\_for} loop that executes the loop body in any order a specified amount of times, the \emph{parallel\_reduce} which combines a parallel\_for with a reduction operation, \emph{parallel\_scan} which combines a parallel\_for operation with a prefix or postfix scan, and \emph{task} which executes a single function potentially in parallel in respect to other tasks or code sections. 
@@ -109,26 +122,16 @@ Policies and Traits
 Paradigm: Parallel patterns and tasking
 Language: C++
 \end{Verbatim}
-\caption{Semantic capture defining the Kokkos programming model.}
+\caption{Semantic capture defined by the Kokkos programming model.}
 \label{fig:SemCaptureKokkos}
 \end{figure}
 
+Figure~\ref{fig:SemCaptureKokkos} 
+
 Expressing concurrency with patterns and abstractions allows the compiler to generate optimized transformations. Further, a runtime library to map the execution to the parallel hardware. In the case of parallel patterns, the execution is unspecified and only promise deterministic results for the reduction and scan operations. This gives the freedom to the underlying abstraction layers to implement different mapping patterns on different hardware such as assignment of iterations to threads or vector lanes. We believe that these abstraction and their descriptive semantic represent key programming primitives and the way forward for native language support for parallel programming.
-Figure~\ref{fig:SemCaptureKokkos} shows the semantic capture definition of the Kokkos programming model. 
+Figure~\ref{fig:SemCaptureKokkos} shows the semantic capture defined by the Kokkos programming model. 
 Figure~\ref{fig:stack} shows abstraction layers in Kokkos and its fit in a parallel programming landscape.
 The next section shows an example application written in Kokkos and provides an insight into the runtime library. For the interested reader, the complete programming model specification can be accessed on-line\cite{pub:KOKKOS}.
-
-\begin{figure}
-\begin{Verbatim}[frame=leftline]
-template <class ExecPolicy, class FunctorType>
-Kokkos::parallel_for(
-    const std::string& name, 
-    const ExecPolicy& policy, 
-    const FunctorType& functor);
-\end{Verbatim}
-\caption{The Kokkos parallel for loop class shows how template metaprogramming allows to specialize types. Its descriptive semantic offers the freedom to optimize execution on modern architectures with multiple degrees of concurrency where an Execution policy shapes the iteration space accordingly.}
-\label{fig:parallelForKokkos}
-\end{figure}
 
 %\begin{center}
 %\begin{tabular}{ |c|c|c| } 
