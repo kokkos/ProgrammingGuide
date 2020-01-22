@@ -1,0 +1,44 @@
+\section{Towards Generic Parallel Programming}\label{chap:background}
+
+A programming model is an abstract representation of a computer. It defines a paradigm and a programming language. The programming language is used by the programmer to write source code, a human readable, textual representation of instructions and data. Source code is a sequential listing of statements evaluated from the top to bottom, one line at a time. While such ordering seems natural to describe an algorithm as it corresponds to sequential processing (both, reading code and progressing the program counter following a time line), it does not include the notion of concurrency. 
+
+Parallel programming models add the notion of concurrency to a sequence of instruction of a program. This is commonly achieved either by adding semantic value to the base programming language, often referred to as programming with \emph{pragma} annotations, through library calls or new languages. All three approaches are conceptually suitable to represent programming paradigms such as tasking, parallel patterns and others. Well known representatives are the OpenMP programming model~\cite{CITEOPENMP} or threading libraries respectively. In general, it is up to the parallel programming model to expose language constructs or library interfaces (APIs) such that they are convenient to the programmer and capture enough semantic information to allow the programming model to map the program execution to the parallel computer hardware efficiently and correctly. Questions of which semantic information is needed, what paradigm to present and by what syntactical means span a design space worth taking a closer look at. Figure~\ref{figSemCapture} shows the three areas that constitute a parallel programming model and its design. We call it the semantic capture.
+
+\begin{figure}[h]
+\begin{Verbatim}[frame=leftline]
+Semantic information
+Paradigm 
+Language
+\end{Verbatim}
+\caption{Semantic capture - a triplet of language, paradigm and semantic information defined by a parallel programming model allow the programmer to express concurrency and the compiler and runtime system to understand and run applications on a parallel machine.}
+\label{figSemCapture}
+\end{figure}
+
+Semantic information provided by the programmer to the parallel programming model can be grouped into information to express intent and properties. They address the question of \emph{what}, \emph{where} and \emph{how}. In the context of parallel programming, these correspond to defining which code portion to parallelize, where to run and access and how to run that parallel code. Synchronization primitives may be considered as part of the what and information on the execution properties such as data placement or memory access type as the how. Semantics are expressed following a paradigm and a programming language.
+
+The parallel programming paradigm is an abstract ~\emph{representation} with the purpose of facilitating the programmer's understanding of programming rules and program behavior. Which programming paradigm to chose depends on several considerations. Parallel-patterns allow to express concurrency for commonly occurring programming patterns such as loop constructs. Tasking is a paradigm that support the expression of concurrent loops as well as irregular algorithms. Distributed and correctness-oriented programming models may implement actor-based programming. In this programming model, each unit of execution represent an actor who communicates over predefined communication interfaces. This paradigm eliminates accesses to shared state and align well with message passing programming (MPI). The execution model and memory model of a programming model defines behavior. That is, it defines the relationship between abstract concepts and program behavior on the given architecture.
+
+Lastly, a language defines the syntax of the parallel semantic. Declarative languages add semantic information to the base language through pragma annotations while imperative languages rely on programming interfaces to capture information. Their semantic is defined in the API specification. Figures~\ref{figOMPLike} and~\ref{figKokkosLike} show examples of two sample applications using the aforementioned parallel programming language types. While both programming models implement the same programming paradigm (parallel patterns), Figures~\ref{figOMPLike} extends the base programming language through pragma annotations. Both, pragma annotations and an API call as shown in Figure~\ref{figKokkosLike} have a similar semantic of describing a parallel loop construct. It is up to the programming model specification to define the execution and memory model in both cases. 
+
+Both examples provide the semantic information on what to parallelize, however, they do not provide information on how to map the parallel execution on modern parallel architectures. In order to define what further information is needed to express concurrency on modern computer architectures, it is important to define an abstract machine model first.
+
+\begin{figure}
+\begin{Verbatim}[frame=leftline]
+# pragma model parallel for
+for ( size_t i = 0; i < N; ++i) {
+ /* loop body */
+}
+\end{Verbatim}
+\caption{Declarative parallel programming provides uses pragma annotations to capture semantic information.}
+\label{figOMPLike}
+\end{figure}
+
+\begin{figure}
+\begin{Verbatim}[frame=leftline]
+model::parallel_for (N, [=] ( const size_t i) {
+  /* loop body */
+});
+\end{Verbatim}
+\caption{Imperative parallel programming uses a base language and relies on programming interfaces to capture information and a documentation that describe their semantics.}
+\label{figKokkosLike}
+\end{figure}
