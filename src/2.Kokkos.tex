@@ -88,18 +88,6 @@ Using the programming language, a parallel programming paradigm can be applied t
 
 \subsection{Kokkos Abstractions}
 
-\begin{figure}
-\begin{Verbatim}[frame=leftline]
-template <class ExecPolicy, class FunctorType>
-Kokkos::parallel_for(
-    const std::string& name, 
-    const ExecPolicy& policy, 
-    const FunctorType& functor);
-\end{Verbatim}
-\caption{The Kokkos parallel for loop class shows how template metaprogramming allows to specialize types. Its descriptive semantic offers the freedom to optimize execution on modern architectures with multiple degrees of concurrency where an Execution policy shapes the iteration space accordingly.}
-\label{fig:parallelForKokkos}
-\end{figure}
-
 To capture semantic information, that is the~\emph{what}, the~\emph{where} and the~\emph{how}, Kokkos introduces six abstractions:~\emph{execution spaces},~\emph{execution patterns},~\emph{execution policies},~\emph{memory spaces},~\emph{memory layout} and~\emph{memory traits}. These abstractions specify semantic information that enable to capture the programmer's intent and allow the runtime to efficiently map the program to any underlying hardware architecture. We list them as follows:
 \begin{itemize}
 	\item  An execution space is a place where code can be executed. On current hardware architectures this correspond to accelerators and CPUs and can include any compute device in the future. This abstraction supports remote compute devices in distributed memory scenarios as remote execution spaces.
@@ -121,11 +109,36 @@ Language: C++
 \label{fig:SemCaptureKokkos}
 \end{figure}
 
+\begin{figure}
+\begin{Verbatim}[frame=leftline]
+template <class ExecPolicy, class FunctorType>
+Kokkos::parallel_for(const std::string& name, 
+ const ExecPolicy& policy, 
+ const FunctorType& functor);
+template <class ExecPolicy, class FunctorType, class ReducerVarNonConst>
+Kokkos::parallel_reduce(const std::string& name, 
+ const ExecPolicy& policy, 
+ const FunctorType& functor, 
+ ReducerVarNonConst& reducer);
+\end{Verbatim}
+\caption{The Kokkos~\emph{parallel_for} and \emph{parallel_reduce} class show how template metaprogramming allows to specialize types. Its descriptive semantic offers the freedom to optimize execution on modern architectures with multiple degrees of concurrency where an Execution policy shapes the iteration space accordingly.}
+\label{fig:parallelForAndReduceKokkos}
+\end{figure}
+
+WIP: Figure~\ref{fig:parallelForAndReduceKokkos} shows definitions of the~\emph{parallel for} and~\emph{parallel reduction} interfaces. Both interfaces take a set of template parameters and function arguments. \emph{ExecPolicy} shapes the iteration space for a particular device with varying degrees of hierarchical parallelism. A valid template parameter for ExecPolicy is a \emph{RangePolicy}. This type defines a 1-dimensional iteration range that is templated.  This allows to consider the distribtion of iterations into  hierarchical orghanization of parallel processing units. In this case, ExecPolicy is   and~\emph{FunctorType} and a set of function arguments. 
+
+
 Expressing concurrency with patterns and abstractions allows the compiler to generate optimized transformations. Further, a runtime library to map the execution to the parallel hardware. In the case of parallel patterns, the execution is unspecified and only promise deterministic results for the reduction and scan operations. This gives the freedom to the underlying abstraction layers to implement different mapping patterns on different hardware such as assignment of iterations to threads or vector lanes. We believe that these abstraction and their descriptive semantic represent key programming primitives and the way forward for native language support for parallel programming.
 
 Figure~\ref{fig:SemCaptureKokkos} shows the semantic capture defined by the Kokkos programming model. 
 Figure~\ref{fig:stack} shows abstraction layers in Kokkos and and how it fits in a parallel programming landscape.
 The next section shows an example application written in Kokkos and provides an insight into the runtime library. For the interested reader, the complete programming model specification can be accessed on-line\cite{pub:KOKKOS}.
+
+\begin{figure}
+\centerline{\includegraphics[width=0.3\textwidth]{img/Stack.png}}
+\caption{Landscape}
+\label{fig:stack}
+\end{figure}
 
 %\begin{center}
 %\begin{tabular}{ |c|c|c| } 
@@ -161,11 +174,3 @@ The next section shows an example application written in Kokkos and provides an 
 %\caption{Declarative parallel programming provides uses pragma annotations to capture semantic information.}
 %\label{figOMPLike}
 %\end{figure}
-
-
-\begin{figure}
-\centerline{\includegraphics[width=0.3\textwidth]{img/Stack.png}}
-\caption{Landscape}
-\label{fig:stack}
-\end{figure}
-
