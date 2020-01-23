@@ -24,6 +24,14 @@ The objective of this paper is to present Kokkos from two perspectives. Firstly,
 
 Further, we would like to present Kokkos to the educational community as one representative parallel programming model for a trend towards architecture-independent and performance-portable programming of CPUs and accelerators. We show an abstraction with enough semantic information to produce performance-portable, parallel code on current architectures. Further, we highlight its alignment and contributions to standardization efforts towards supporting parallel programming in C++. 
 
-Secondly, we would like to promote Kokkos to students as a platform to understand and experiment with parallel patterns and types. Type specialization through templating allows to experiment with memory layouts and investigate their performance implications. Further, its modular code organization and open access under the BSD license allow students to peek behind the scenes and explore the mappings of abstractions to a variety of vendor-specific implementations. We believe that this makes Kokkos a valuable programming model for students which allows them to reason about vendor-provided programming models and to see them as particular implementations of higher abstractions in a parallel programming landscape.
+Secondly, we would like to promote Kokkos to students and educators as a platform to understand and experiment with parallel patterns in a fashion that is
+
+\begin{itemize}
+\item Generic
+\item Vendor-agnostic
+\item Declarative
+\end{itemize}
+
+First, Kokkos has semantics that are generic. This means that students are learning parallelism detached from any architectural concerns. Kokkos won\'t require them to know the specifics of the \"symmetric multiprocessors\" of a GPU or the cache hiearchy on a CPU\footnote{Though nothing precludes an educator from teaching these independently of the model}. Finally, Kokkos is vendor agnostic. If you have a computer lab with processors from one vendor and your students have processors from another, this presents no problem, Kokkos likely works on both. Kokkos is declarative, students aren\'t saying \"map these work items to this set of threads\" but \"do a reduction over this set of data.\" This is critical, much of software engineering is moving to declarative models and languages, learning to operate in such a mindset is useful outside of parallel programming.
 
 The rest of this paper is structured as follows. The next Chapter gives an overview on parallel programming concepts and presents the notion of \emph{semantic capture}. Chapter~\ref{chap:kokkosMM} presents the abstract machine model used to derive required semantic information for performance portability in Kokkos. Chapters~\ref{chap:kokkosPM} and ~\ref{chap:kokkosBackend} present the Kokkos programming model and its back-end support. Chapters~\ref{chap:c++} and~\ref{chap:related} show the alignment to C++ standardization efforts and dicuss related work and lastly Chapter~\ref{chap:conclusion} concludes this work.
