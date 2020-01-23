@@ -33,7 +33,7 @@ for ( size_t i = 0; i < N; ++i) {
  /* loop body */
 }
 \end{Verbatim}
-\caption{Declarative parallel programming provides uses pragma annotations to capture semantic information.}
+\caption{Imperative model tells the compiler to use simd and vectorize and tile and unroll and fuse. It lists specific optimizations that should be made}
 \label{figOMPLike}
 \end{figure}
 
@@ -43,6 +43,6 @@ model::parallel_for (N, [=] ( const size_t i) {
   /* loop body */
 });
 \end{Verbatim}
-\caption{Imperative parallel programming uses a base language and relies on programming interfaces to capture information and a documentation that describe their semantics.}
+\caption{Declarative model expresses parallelism and relies on the model to map it effectively to the architecture}
 \label{figKokkosLike}
 \end{figure}
