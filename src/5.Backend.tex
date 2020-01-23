@@ -7,20 +7,20 @@ The important consideration here is that the method of compiling code for differ
 
 \begin{figure}
 \begin{Verbatim}[frame=leftline]
-
 int main(int argc, char* argv[]) {
-   Kokkos::initialize(argc,argv);
-
-   int N = atoi(argv[1]);
-
-   Foo foo;
-
-   Kokkos::parallel_for(Kokkos::TeamPolicy<Tag1>(N,Kokkos::AUTO), foo);
-   Kokkos::parallel_for("Loop2", Kokkos::TeamPolicy<Tag2>(N,Kokkos::AUTO), foo);
-   
-   Kokkos::finalize();
+ Kokkos::initialize(argc,argv);
+ {
+  Foo foo;
+  int N = atoi(argv[1]);
+  Kokkos::View<int*> a("A",N);  
+  Kokkos::parallel_for(Kokkos::RangePolicy<OpenMP>(N), 
+     KOKKOS_LAMBDA (const int & i)
+  {
+  	a(i)=i;
+  }); 
+ }
+ Kokkos::finalize();
 }
-
 \end{Verbatim}
 \caption{Declarative parallel programming provides uses pragma annotations to capture semantic information.}
 \label{figOMPLike}
