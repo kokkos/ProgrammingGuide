@@ -1,6 +1,8 @@
 \section{Towards Generic Parallel Programming}\label{chap:background}
 
-A programming model exposes constrained semantics to the programmer which that programmer uses to express intent. Absent an embedded programming model, the semantics of C-like languages can lead to sequential thinking and execution. Parallel programming models expose parallel semantics to enable developers to create performance portable code. This is commonly achieved by adding semantic value to the base programming language, often referred to as programming with \emph{pragma} annotations. Other methods expose such semantics through library calls or new languages. All three approaches are conceptually suitable to represent programming paradigms such as tasking, parallel patterns and others. Some representatives are the OpenMP programming model~\cite{CITEOPENMP}, threading libraries, or languages like Erlang in which parallelism is a first-class citizen. In general, it is up to the parallel programming model to expose language constructs or library interfaces (APIs) such that they balance convenience to the programmer with semantics sufficient to map the program execution to the parallel computer hardware efficiently and correctly. Questions of what semantic information is needed, what paradigms to present and by what syntactical means span a design space worth taking a closer look at. Figure~\ref{figSemCapture} shows the three areas that constitute a parallel programming model and its design. We call it the semantic capture.
+A programming model exposes constrained semantics to the programmer which that programmer uses to express intent. Absent an embedded programming model, the semantics of C-like languages can lead to sequential thinking and execution. Parallel programming models expose parallel semantics to enable developers to create performance portable code. This is commonly achieved by adding semantic value to the base programming language, often referred to as programming with \emph{pragma} annotations. Other methods expose such semantics through library calls or new languages. All three approaches are conceptually suitable to represent programming paradigms such as tasking, parallel patterns and others. Some representatives are the OpenMP programming model~\cite{CITEOPENMP}, threading libraries, or languages like Erlang in which parallelism is a first-class citizen. In general, it is up to the parallel programming model to expose language constructs or library interfaces (APIs) such that they combine convenience to the programmer with semantics sufficient to map the program execution to the parallel computer hardware efficiently and correctly. 
+
+In designing Kokkos with this mentality, we looked at a broad variety of current and future architectures on which software would need to run. We also looked at our codes, which express many different algorithmic property. We conceived of Kokkos as a generic programming system that could cover the space of architectures we cared about, while exposing semantics in which the algorithms of our codes could be easily expressed. In this way, a generic programming system embedded in the language became the glue between the semantics of a problem domain and the capabilities of an architecture domain.
 
 \begin{figure}
 \centerline{\includegraphics[width=0.45\textwidth]{img/Hollman.png}}
@@ -8,13 +10,15 @@ A programming model exposes constrained semantics to the programmer which that p
 \label{fig}
 \end{figure}
 
+Earlier we discuss how a programming model constrains semantics to allow the expression of intent in such a way that a developer achieves their goals. Putting together an effective programming model requires constraining semantics such that they enable the necessary parallel paradigms, and expose to users only those aspects of the underlying hardware that they need to think about. We call the combination of constrained semantics, parallel paradigms, and division of responsibility between developer and framework the Semantic Capture.
+
 \begin{figure}[h]
 \begin{Verbatim}[frame=leftline]
-Semantic information
-Paradigm 
-Language
+Constrained Semantics
+Parallel Paradigms 
+Division of Responsibility
 \end{Verbatim}
-\caption{Semantic capture - a triplet of language, paradigm and semantic information defined by a parallel programming model allow the programmer to express concurrency and the compiler and runtime system to understand and run applications on a parallel machine.}
+\caption{Semantic capture - a triplet of constrained semantics, parallel paradigms, and division of responsibilities defined by a parallel programming model to allow developers to run performance-portable code on a set of architectures}
 \label{figSemCapture}
 \end{figure}
 
@@ -33,7 +37,7 @@ for ( size_t i = 0; i < N; ++i) {
  /* loop body */
 }
 \end{Verbatim}
-\caption{Declarative parallel programming provides uses pragma annotations to capture semantic information.}
+\caption{Imperative model tells the compiler to use simd and vectorize and tile and unroll and fuse. It lists specific optimizations that should be made}
 \label{figOMPLike}
 \end{figure}
 
@@ -43,6 +47,6 @@ model::parallel_for (N, [=] ( const size_t i) {
   /* loop body */
 });
 \end{Verbatim}
-\caption{Imperative parallel programming uses a base language and relies on programming interfaces to capture information and a documentation that describe their semantics.}
+\caption{Declarative model expresses parallelism and relies on the model to map it effectively to the architecture}
 \label{figKokkosLike}
 \end{figure}
