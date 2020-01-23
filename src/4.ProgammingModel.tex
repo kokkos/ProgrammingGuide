@@ -7,8 +7,6 @@ Lastly, from the programming model perspective, C++ offers template metaprogramm
 
 Using the programming language, a parallel programming paradigm can be applied to simplify the process of thought. Kokkos supports the parallel patterns and task paradigms. Parallel patters covers \emph{for}, \emph{ scan} and \emph{reduction}. This allows the expression of concurrency over iterative, for-loop computable algorithms. To cover the class of while-loop computable algorithms (irregular algorithms), Kokkos implements the tasking paradigm. Tasks encapsulate work into units that may be executed in parallel to other tasks or sections of the program. Equipped with a language and set of paradigms, a particular set of abstractions can be defined to expose the abstract machine model and captures the intent of the programmer.
 
-\subsection{Kokkos Abstractions}
-
 To capture semantic information, that is the~\emph{what}, the~\emph{where} and the~\emph{how}, Kokkos introduces six abstractions:~\emph{execution spaces},~\emph{execution patterns},~\emph{execution policies},~\emph{memory spaces},~\emph{memory layout} and~\emph{memory traits}. These abstractions specify semantic information that enable to capture the programmer's intent and allow the runtime to efficiently map the program to any underlying hardware architecture. We list them as follows:
 \begin{itemize}
 	\item  An execution space is a place where code can be executed. On current hardware architectures this correspond to accelerators and CPUs and can include any compute device in the future. This abstraction supports remote compute devices in distributed memory scenarios as remote execution spaces.
