@@ -36,24 +36,18 @@ template <class ExecPolicy, class FunctorType>
 Kokkos::parallel_for(const std::string& name, 
  const ExecPolicy& policy, 
  const FunctorType& functor);
-template <class ExecPolicy, class FunctorType, class ReducerVarNonConst>
-Kokkos::parallel_reduce(const std::string& name, 
- const ExecPolicy& policy, 
- const FunctorType& functor, 
- ReducerVarNonConst& reducer);
 \end{Verbatim}
-\caption{The Kokkos~\emph{parallel\_for} and \emph{parallel\_reduce} class show how template metaprogramming allows to specialize types. Its descriptive semantic offers the freedom to optimize execution on modern architectures with multiple degrees of concurrency where an Execution policy shapes the iteration space accordingly.}
-\label{fig:parallelForAndReduceKokkos}
+\caption{The Kokkos~\emph{parallel\_for} class shows how template metaprogramming allows to specialize types. Its descriptive semantic offers the freedom to optimize execution on modern architectures with multiple degrees of concurrency where an execution policy (\emph{ExecPolicy}) shapes the iteration space accordingly.}
+\label{fig:parallelFor}
 \end{figure}
 
-WIP: Figure~\ref{fig:parallelForAndReduceKokkos} shows definitions of the~\emph{parallel for} and~\emph{parallel reduction} interfaces. Both interfaces take a set of template parameters and function arguments. \emph{ExecPolicy} shapes the iteration space for a particular device with varying degrees of hierarchical parallelism. A valid template parameter for ExecPolicy is a \emph{RangePolicy}. This type defines a 1-dimensional iteration range that is templated.  This allows to consider the distribtion of iterations into  hierarchical orghanization of parallel processing units. In this case, ExecPolicy is   and~\emph{FunctorType} and a set of function arguments. 
+Figure~\ref{fig:parallelFor} shows the definition of the Kokkos~\emph{parallel\_for} interface. The interface accepts two template parameters and three function arguments. \emph{ExecPolicy} shapes the iteration space for a particular execution space. Valid template parameter are the~\emph{RangePolicy},~\emph{TeamPolicy},~\emph{MDRangePolicy} and others. As the name suggests, these policies express how an iteration space is mapped to the underlying hardware. In particular, a range policy defines a one dimensional iteration range. Team policies allow to map an iteration space to architectures that expose hierarchical parallelism.. Policies commonly accept template parameters such as~\emph{execution space},~\emph{schedule} or~\emph{index type}. For the interested reader, the complete programming model specification can be accessed on-line\cite{pub:KOKKOS}.
 
-
-Expressing concurrency with patterns and abstractions allows the compiler to generate optimized transformations. Further, a runtime library to map the execution to the parallel hardware. In the case of parallel patterns, the execution is unspecified and only promise deterministic results for the reduction and scan operations. This gives the freedom to the underlying abstraction layers to implement different mapping patterns on different hardware such as assignment of iterations to threads or vector lanes. We believe that these abstraction and their descriptive semantic represent key programming primitives and the way forward for native language support for parallel programming.
+Programming with patterns and abstractions allows the compiler to generate optimized transformations. In case of parallel patterns, the execution is unspecified and only promises deterministic results for the reduction and scan operations. This gives the freedom to the underlying abstraction layers to implement different mapping patterns on different hardware such as assignment of iterations to threads or vector lanes. We believe that these abstraction and their descriptive semantic represent key programming primitives and the way forward for native language support for parallel programming.
 
 Figure~\ref{fig:SemCaptureKokkos} shows the semantic capture defined by the Kokkos programming model. 
-Figure~\ref{fig:stack} shows abstraction layers in Kokkos and and how it fits in a parallel programming landscape.
-The next section shows an example application written in Kokkos and provides an insight into the runtime library. For the interested reader, the complete programming model specification can be accessed on-line\cite{pub:KOKKOS}.
+%Figure~\ref{fig:stack} shows abstraction layers in Kokkos and and how it fits in a parallel programming landscape.
+The next section shows how the Kokkos parallel\_for class is mapped to the the underlying back-end programming model.
 
 \begin{figure}
 \centerline{\includegraphics[width=0.3\textwidth]{img/Stack.png}}
