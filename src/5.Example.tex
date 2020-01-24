@@ -1,10 +1,13 @@
-\section{Kokkos in Practice}\label{chap:kokkosExample}
+\section{Example}\label{chap:kokkosExample}
 
-This section provides a practical insight into programming with Kokkos and the inner workings of the programming model library. Figure~\ref{fig:KokkosExample} shows am example application that algorithmically initializes an array to integers and includes several points of interests. Taking a closer look, the reader can observe the initialization and finalization of the Kokkos runtime library through the~\emph{Kokkos::initialize} and~\emph{Kokkos::finalize} method calls. Further the example shows the use of the~\emph{view} abstraction that represents a one-dimensional integer array of size~\emph{N}. The object carries the name~\emph{A} internally to facilitate tracing and debugging. In this example, a parallel\_for pattern object receives a range policy that is templated to the OpenMP execution space and takes~\emph{N} and a lambda expression as parameters. Vies behave as pointers and there a copy-semantic in the lambda expression is used in this case. Within the loop-body, the view object is accessed through the~\emph{()-operator}. It is up to the OpenMP execution space to provide performance implementations of the view, an efficient internal representation of the array and for the access operator for the underlying hardware architecture.
+This section provides a practical insight into programming with Kokkos and the inner workings of the programming model library. Figure~\ref{fig:KokkosExample} shows am example application that algorithmically initializes an array to integers. Taking a closer look, the reader can observe the initialization and finalization of the Kokkos runtime library through the~\emph{Kokkos::initialize} and~\emph{Kokkos::finalize} method calls. Further the example shows the use of the~\emph{view} abstraction that represents a one-dimensional integer array of size~\emph{N}. The object carries the name~\emph{A} internally to facilitate tracing and debugging. In this example, a parallel\_for pattern object receives a range policy that is templated to the OpenMP execution space and takes~\emph{N} and a lambda expression as parameters. Vies behave as pointers and there a copy-semantic in the lambda expression is used in this case. Within the loop-body, the view object is accessed through the~\emph{()-operator}. It is up to the OpenMP execution space to provide performance implementations of the view, an efficient internal representation of the array and for the access operator for the underlying hardware architecture.
 
 At compile time, the compiler generates the particular types, where in this case, the parallel\_for is types for the OpenMP execution space. At link time, the linker links this method to the corresponding parallel\_for implementation in the Kokkos library.
 
 The implementation of the parallel\_for specific to the OpenMP execution space is shown in Figure~\ref{fig:KokkosExampleOMPBackEnd}. It shows the template argument of that class predefined to that execution space and shows how the~\emph{execute()} method calls the functor through ~\emph{exec\_range}. In can be seen that the Kokkos library relies on the back-end compiler to generate platform optimized, parallel code. For the OpenMP back-end implementation of the parallel for loop, OpenMP pragma annotations are used. Since the parallel for implies a barrier at the end of the parallel region, the return semantic of Kokkos::parallel\_for call is synchronous. 
+
+
+
 
 \begin{figure}
 \begin{small}
@@ -12,12 +15,20 @@ The implementation of the parallel\_for specific to the OpenMP execution space i
 int main(int argc, char* argv[]) {
   Kokkos::initialize(argc,argv);
   {
-    int N = atoi(argv[1]);
-    Kokkos::View<int*> a("A", N);  
-    Kokkos::parallel_for(
-    Kokkos::RangePolicy<Kokkos::OpenMP>(N,
-    [=](const int & i) {
-      a(i)=i*i;
+    ...
+    Kokkos::View<double*> a("A", dN);  
+    Kokkos::View<double*> r("A", N);
+    Kokkos::View<double**> M("A", dM, dN);  
+
+    Kokkos::parallel_for("outer", TeamPolicy<>(M,AUTO),
+    [=](const member_type &teamID)
+    {
+      const int e = teamID.league_rank();
+      Kokkos::parallel_reduce( TeamThreadRange(teamID, N),
+        [=](const int & i, double & r_tmp) {
+          r_tmp += M(e, i) * a(i);
+        }, 
+        r(e));
     }); 
   }
   Kokkos::finalize();
@@ -27,6 +38,30 @@ int main(int argc, char* argv[]) {
 \caption{This example application written in Kokkos shows the use of a~\emph{view}-type and a parallel for loop. Both Kokkos types are templated to the OpenMP execution space.}
 \label{fig:KokkosExample}
 \end{figure}
+
+
+
+%\begin{figure}
+%\begin{small}
+%\begin{Verbatim}[frame=leftline]
+%int main(int argc, char* argv[]) {
+%  Kokkos::initialize(argc,argv);
+%  {
+%    int N = atoi(argv[1]);
+%    Kokkos::View<int*> a("A", N);  
+%    Kokkos::parallel_for(
+%    Kokkos::RangePolicy<Kokkos::OpenMP>(N,
+%    [=](const int & i) {
+%      a(i)=i*i;
+%    }); 
+%  }
+%  Kokkos::finalize();
+%}
+%\end{Verbatim}
+%\end{small}
+%\caption{This example application written in Kokkos shows the use of a~\emph{view}-type and a parallel for loop. Both Kokkos types are templated to the OpenMP execution space.}
+%\label{fig:KokkosExample}
+%\end{figure}
 
 \begin{figure}
 \begin{small}
