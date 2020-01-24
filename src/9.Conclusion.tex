@@ -1,8 +1,10 @@
 \section{Conclusion}\label{chap:conclusion}
-%...
-In this work we gave an introduction to the Kokkos programming model. We presented a conceptual framework consi,  presented the Kokkos parallel prgroamming model. 
-Programming support for parallel progrmaming in mainstream langiages is gaining momentung
-. Programming abstraction libraries such as Kokkos, Raja and others showcase this trend. Targeting a generic parallel machine representation allows to design and efficiently use 
+In this work we gave an introduction to the Kokkos parallel programming model and our guiding thoughts behind its design. We discussed a machine representation of a parallel hardware architecture that is characterized by a variety of processing units, memories and their hierarchical organization. This machine model allowed us to define a constrained semantic represented though different types and patterns. Further we listed supported paradigms and considerations that influenced the design of the semantic capture.
 
-We emphasize the importance and welcome new development and educational use of parallel programming models that align to this trend. We believe that abstracting from vendor or architecture-specific programming models not only simplifies parallel programming in science and industry but also would support educators in teaching parallel programming.
-We would also like to express gratitude to educators for taking on this important role. Further materials, including a detailed description of the programming- and machine model can be found by following the reference on the Kokkos programming mode. Finally, we would like to mention that interested developers and student can reach the development team on Slack by following the invitation link as mentioned in the reference section.
+An example application gave insight into parallel programming with Kokkos patterns and the back-end implementation. The back-end implementation shows the generic programming interface and its partial type-specialization towards a particular vendor programming model.
+
+To the educational community, we presented Kokkos as a representative parallel programming model of a trend towards support of parallel programming in base languages and through library abstractions. We believe in the importance of this trend in computer science education as such parallel programming models contribute to the generic and relevant education of parallel programming and prepare student for their programming careers.
+
+We emphasize the importance and welcome development and educational use of other parallel programming models that align to this effort. An example of this is Raja. 
+
+We would also like to express gratitude to educators for taking on this important role. Further materials, including a detailed description of the programming- and machine model can be found by following the reference on the Kokkos programming mode. Finally, we would like to mention that interested readers can reach the development team on Slack\cite{KOKKOSLACK}.
