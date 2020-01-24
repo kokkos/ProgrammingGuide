@@ -1,7 +1,6 @@
 
 \section{Towards Parallel Programming in C++}\label{chap:c++}
-%\begin{itemize}
-%\item Our contributions to parallel programming in C++. 
-%\item Give an idea on direction in C++, and on our contributions.
-%\item Maybe mention some of these: span, atomic\_ref, executors, kokkos\_class\_lambda (fixing this->...) etc.
-%\end{itemize}
+
+Another important reason that Kokkos is an ideal choice for an eduactional setting is the feedback cycle it participates in with the ISO-C++ language standard itself.  Over the past decade or so, work on the Kokkos programming model has contributed to a number of current or near-future ISO-C++ features, including \code{atomic_ref}, \code{mdspan}, and executors.  This interplay between Kokkos and the C++ standard means that students using the model will be exposed to paradigms that will likely be part of the broader standard C++ ecosystem, thus preparing them for a much wider range of application areas.
+
+In particular, the design of C++ executors, which are quite similar to Kokkos execution spaces, was heavily influenced by Kokkos.  As the demand to extract performance from increasingly deep and increasingly asynchronous software stacks across a wide variety of domains increases, many C++ experts expect executors to become a central abstraction in any performance-oriented software stack.  This is already evident with the introduction of parallel algorithms with execution policies in C++17 (also influenced by Kokkos), and the likely extensions of these algorithms to executors and asynchrony in the coming years continues to bear many similarities to the Kokkos programming model.  Thus, teaching Kokkos as a parallel programming model not only prepares students for HPC programming environments; it also prepares them for any of a number of performance sensitive fields, from embedded devices to gaming to data science and machine learning.
