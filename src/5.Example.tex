@@ -1,97 +1,108 @@
 \section{Example}\label{chap:kokkosExample}
 
-This section provides a practical insight into programming with Kokkos and the inner workings of the programming model library. Figure~\ref{fig:KokkosExample} shows am example application that algorithmically initializes an array to integers. Taking a closer look, the reader can observe the initialization and finalization of the Kokkos runtime library through the~\emph{Kokkos::initialize} and~\emph{Kokkos::finalize} method calls. Further the example shows the use of the~\emph{view} abstraction that represents a one-dimensional integer array of size~\emph{N}. The object carries the name~\emph{A} internally to facilitate tracing and debugging. In this example, a parallel\_for pattern object receives a range policy that is templated to the OpenMP execution space and takes~\emph{N} and a lambda expression as parameters. Vies behave as pointers and there a copy-semantic in the lambda expression is used in this case. Within the loop-body, the view object is accessed through the~\emph{()-operator}. It is up to the OpenMP execution space to provide performance implementations of the view, an efficient internal representation of the array and for the access operator for the underlying hardware architecture.
+In order to provide an impression of the looks and feel of Kokkos code this section discusses a small but complete example of a data parallel Kokkos application shown in Figure~\ref{fig:KokkosExample} which allocates data, potentially initalizes it on the host and then performs a matrix-vector product.
+Similar to other programming models such as MPI, Kokkos must be initialized and finalized. 
+This serves the purpose of setting up the underlying runtime and acquiring resouces.
+The fundamental data structure of Kokkos programs is the ~\emph{Kokkos::View}.
+These views represent multi-dimensional arrays of rank one to eight.
+A general philosophy of Kokkos is to have defaults for most properties, including data layouts, memory spaces and execution spaces.
+Consequently the simple example does not explicitly set which memory space the data lives in.
+Kokkos ensures that the defaults for parallel execution and data allocations match though. 
 
-At compile time, the compiler generates the particular types, where in this case, the parallel\_for is types for the OpenMP execution space. At link time, the linker links this method to the corresponding parallel\_for implementation in the Kokkos library.
+The example then creates copies of the views accessible by the host process via the ~\emph{create\_mirror\_view} function. 
+If the original data was already accessible by the host process, this function returns a ~\emph{View} referencing the same allocation.
+In real applications this host process accessible allocation is often necessary for I/O purposes for example to initialize the data with input read from a file.
+To get the data to the memory space accessible by the parallel execution resources the function ~\emph{deep\_copy} is then invoked.
+If two ~\emph{View}s are aliases of each other this operation is a no-op. 
 
-The implementation of the parallel\_for specific to the OpenMP execution space is shown in Figure~\ref{fig:KokkosExampleOMPBackEnd}. It shows the template argument of that class predefined to that execution space and shows how the~\emph{execute()} method calls the functor through ~\emph{exec\_range}. In can be seen that the Kokkos library relies on the back-end compiler to generate platform optimized, parallel code. For the OpenMP back-end implementation of the parallel for loop, OpenMP pragma annotations are used. Since the parallel for implies a barrier at the end of the parallel region, the return semantic of Kokkos::parallel\_for call is synchronous. 
+Now the parallel pattern can be invoked.
+Since the matrix-vector product is an example of hierarchical work (for each row a dot product must be performed), the ~\emph{Kokkos::TeamPolicy} is used.
+For each row of M a team of threads is launched, where the size of team is left for the Kokkos runtime to choose.
+When using a ~\emph{TeamPolicy} the operator of the lambda does not simply get an index, but rather a handle to the team of threads. 
+This handle provides the team id, and is subsequently handed to the nested parallel execution policies. 
+The nested reduction requires the operator of the nested lambda to take a reference to the thread local reduction variable (called here ~\emph{y\_tmp}) in addition to the loop index.
+It then writes the result into the correct position of the output vector. 
 
+After the parallel pattern the main code calls a fence to ensure that the execution of the parallel code is finished, before copying the results of y back to the host and potentially putting them out through an I/O operation.
 
-
+To learn more about Kokkos's capabilties and features we recommend going through the extensive Kokkos tutorial, with multiple days worth of lectures and exercises, and read the Kokkos Programming Guide as well as the Kokkos API documentation - which provide several hundred pages of text-book like material and API reference.
+The Tutorial is intended for computational scientists with minimal or even no prior knowlegde of parallel programming.
+It introduces concepts of parallel programming using Kokkos step by step, through a series of lectures and hands-on exercises which build on each other and gradually introduce more and more Kokkos constructs.
+The Programming Guide provides more in-depth information to the concepts introduced in the Tutorial, while the API reference provides straight forward documentation of the syntax and semantics of Kokkos's library interface.
 
 \begin{figure}
 \begin{small}
 \begin{Verbatim}[frame=leftline]
+#include<Kokkos_Core.hpp>
 int main(int argc, char* argv[]) {
   Kokkos::initialize(argc,argv);
   {
-    ...
-    Kokkos::View<double*> a("A", dN);  
-    Kokkos::View<double*> r("A", N);
-    Kokkos::View<double**> M("A", dM, dN);  
+    Kokkos::View<double*> x("x", M);  
+    Kokkos::View<double*> y("y", N);
+    Kokkos::View<double**,Kokkos::LayoutRight> A("A", N, M);  
 
-    Kokkos::parallel_for("outer", TeamPolicy<>(M,AUTO),
-    [=](const member_type &teamID)
-    {
-      const int e = teamID.league_rank();
-      Kokkos::parallel_reduce( TeamThreadRange(teamID, N),
-        [=](const int & i, double & r_tmp) {
-          r_tmp += M(e, i) * a(i);
+    auto x_h = Kokkos::create_mirror_view(x);
+    auto y_h = Kokkos::create_mirror_view(y);
+    auto A_h = Kokkos::create_mirror_view(A);
+    //intialize_data_on_host(x_h,A_h);
+    Kokkos::deep_copy(x,x_h);
+    Kokkos::deep_copy(A,A_h);    
+
+    Kokkos::parallel_for("outer", TeamPolicy<>(N,AUTO),
+    [=](const member_type &team_handle) {
+      const int e = team_handle.league_rank();
+      Kokkos::parallel_reduce( TeamThreadRange(team_handle, M),
+        [=](const int & i, double & y_tmp) {
+          y_tmp += A(e, i) * x(i);
         }, 
-        r(e));
+        y(e));
     }); 
+    Kokkos::fence();
+    Kokkos::deep_copy(y_h,y);
+    //output_result_on_host(y_h);
   }
   Kokkos::finalize();
 }
 \end{Verbatim}
 \end{small}
-\caption{This example application written in Kokkos shows the use of a~\emph{view}-type and a parallel for loop. Both Kokkos types are templated to the OpenMP execution space.}
+\caption{This example application written in Kokkos shows the use of a~\emph{view}-type and a parallel for loop using a ~\emph{TeamPolicy} and a nested parallel reduction. }
 \label{fig:KokkosExample}
 \end{figure}
 
 
+\section{Kokkos Implementation}
 
-%\begin{figure}
-%\begin{small}
-%\begin{Verbatim}[frame=leftline]
-%int main(int argc, char* argv[]) {
-%  Kokkos::initialize(argc,argv);
-%  {
-%    int N = atoi(argv[1]);
-%    Kokkos::View<int*> a("A", N);  
-%    Kokkos::parallel_for(
-%    Kokkos::RangePolicy<Kokkos::OpenMP>(N,
-%    [=](const int & i) {
-%      a(i)=i*i;
-%    }); 
-%  }
-%  Kokkos::finalize();
-%}
-%\end{Verbatim}
-%\end{small}
-%\caption{This example application written in Kokkos shows the use of a~\emph{view}-type and a parallel for loop. Both Kokkos types are templated to the OpenMP execution space.}
-%\label{fig:KokkosExample}
-%\end{figure}
+The following section gives a short impression of Kokkos maps generic parallel programming patterns to the hardware specific programming models.
+As a template metaprogramming library, Kokkos makes heavy use of partial specialization. 
+In particular the parallel pattern functions are mapped to partial specializations of classes for those patterns for each execution policy type and backend type.
+The library specification contains concepts for execution spaces, which define the generic interface of those classes.
+To add a new backend, each of those concepts must be implemented.
 
+A simplified version of this implementation strategy is provided in Figure\ref{fig:KokkosExampleOMPBackEnd}.
+The ~\emph{parallel\_for} function instantiates a partial specialization of the ~\emph{ParallelFor} class and calls its ~\emph{execute} function.
+That function is then responsible to implement the Kokkos parallel pattern, for example via OpenMP pragmas in the case of the OpenMP execution space.
 \begin{figure}
 \begin{small}
 \begin{Verbatim}[frame=leftline]
-template <class FunctorType, class... Traits>
-class ParallelFor<FunctorType, 
-    ..., 
-    Kokkos::OpenMP> {
-  ...
-private:
-  ... cconst FunctorType& functor, 
-  const Member i_beg,
-  const Member i_end) 
-  {
-    for (Member i = i_beg; iwork < i_end; ++i){
-      functor(t, i);
-    }
-  }
+template <class FunctorType>
+class ParallelFor<FunctorType, RangePolicy<OpenMP> > {
+  const FunctorType functor;
+  const RangePolicy<OpenMP> policy; 
 
 public:
-  ...
-  ... execute() const {(
-#pragma omp parallel num_threads(OpenMP::gPoolSize())
-  {
-    HostThreadTeamData& data=*(i->get_thr_data());
-    ...
-    range = data.get_work_partition();
-    range(m_functor, range.first + m_policy.begin(),
-    range.second + m_policy.begin());
+  void execute() const {
+    #pragma omp parallel for
+    for(int i=policy.begin(); i<policy.end(); i++)
+      functor(i);
   }
+}
+
+template <class FunctorType, class PolicyType>
+void parallel_for(std::string label, const PolicyType& policy,
+                  const FunctorType& functor) {
+  // Call tools hook with label
+  ParallelFor<FunctorType,PolicyType> pf{functor,policy};
+  pf.execute();
 }
 
 \end{Verbatim}
