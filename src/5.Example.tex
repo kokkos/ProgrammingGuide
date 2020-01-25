@@ -4,9 +4,9 @@ In this section we provide an example of an application written in the Kokkos pr
 As a first step, a Kokkos application must call ~\emph{Kokkos::initialize}. Initialization and finalization are required and serve the purpose of setting up the underlying runtime. 
 Further, the example code shows the use of the ~\emph{Kokkos::View} abstraction. 
 
-Views are abstractions that represent data. Naturally data can reside in host memory where it is accessible to the host execution space or on device memory where it is accessible to the device execution space. In this example, copies of the views are created in order to make them accessible by the host process. This is accomplished by calling the ~\emph{create\_mirror\_view} function. 
+Views are abstractions that represent data. Naturally data can reside in host memory where it is accessible to the host execution space or on device memory where it is accessible to the device execution space. In this example, copies of the views are created in order to make them accessible by the host process. This is accomplished by calling the ~\emph{create\_mirror\_view} function.
 
-If the original data is already accessible by the host process, this function returns a ~\emph{View} referencing the same allocation. In real applications host-accessible allocation is necessary in order to allow I/O operations during fileystem access. To move data to the respective memory space that is accessible by the parallel execution resources, the function ~\emph{deep\_copy} has to be invoked. In case two view objects are aliased, this operation results in a~\emph{no-op}. 
+If the original data is already accessible by the host process, this function returns a ~\emph{View} referencing the same allocation. In real applications host-accessible allocation is necessary in order to allow I/O operations during filesystem access. To move data to the respective memory space that is accessible by the parallel execution resources, the function ~\emph{deep\_copy} has to be invoked. In case two view objects are aliased, this operation results in a~\emph{no-op}.
 
 %A general philosophy of Kokkos is to have defaults for most properties, including data layouts, memory spaces and execution spaces.
 Consequently the simple example does not explicitly set which memory space the data lives in.
