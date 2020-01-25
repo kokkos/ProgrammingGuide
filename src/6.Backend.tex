@@ -1,5 +1,5 @@
 
-\section{Kokkos Implementation}\label{chap:backend}
+\section{Back-end Support}\label{chap:backend}
 
 In this section we peak inside the Kokkos library and show how the a generic parallel for loop is mapped to the OpenMP back-end programming model. As a template metaprogramming library, Kokkos makes use of partial specialization. In particular the~\emph{parallel\_for} or ~\emph{parallel\_reduce} functional calls as shown in Figure~\ref{fig:KokkosExample} are mapped to partially specialized classes. Such classes correspond to particular back-end where for each back-end, concepts with partial specialization must be provided. Today, Kokkos supports the CUDA and OpenMP back-ends. For each new back-end, partially implemented classes that implement necessary concepts must be provided.
 
