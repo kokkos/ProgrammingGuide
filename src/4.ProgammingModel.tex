@@ -19,24 +19,25 @@ To capture semantic information, that is the~\emph{what}, the~\emph{where} and t
 \end{itemize}
 
 \begin{figure}[h]
-\begin{Verbatim}[frame=leftline]
-Constrained Semantics: Patterns (intent), Spaces, 
-Layouts, Policies and Traits
-Parallel Paradigms: Parallel patterns and tasking
+\begin{minted}[fontsize=\small]{text}
+Constrained Semantics: Patterns (intent),
+Spaces, Layouts, Policies and Traits
+Parallel Paradigms: Parallel patterns and 
+tasking
 Expression: Embedded, C++
 Control Paradigm: descriptive
-\end{Verbatim}
+\end{minted}
 \caption{Semantic capture defined by the Kokkos programming model.}
 \label{fig:SemCaptureKokkos}
 \end{figure}
 
 \begin{figure}
-\begin{Verbatim}[frame=leftline]
+\begin{minted}[fontsize=\small]{c++}
 template <class ExecPolicy, class FunctorType>
 Kokkos::parallel_for(const std::string& name, 
  const ExecPolicy& policy, 
  const FunctorType& functor);
-\end{Verbatim}
+\end{minted}
 \caption{The Kokkos~\emph{parallel\_for} class shows how template metaprogramming allows to specialize types. Its descriptive semantic offers the freedom to optimize execution on modern architectures with multiple degrees of concurrency where an execution policy (\emph{ExecPolicy}) shapes the iteration space accordingly.}
 \label{fig:parallelFor}
 \end{figure}

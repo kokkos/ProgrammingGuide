@@ -5,13 +5,13 @@ A programming model exposes constrained semantics that the programmer uses to ex
  Figure~\ref{figSemCapture} shows the four properties that constitute a parallel programming model and its design. We call it the semantic capture.
 
 \begin{figure}[h]
-\begin{Verbatim}[frame=leftline]
+\begin{minted}[fontsize=\small]{text}
 Constrained Semantics: memory allocations, 
 memory movement, execution parameters
 Parallel Paradigms: patterns, tasks
 Expression: language 
 Control Paradigm: prescriptive, descriptive
-\end{Verbatim}
+\end{minted}
 \caption{Semantic capture: a set of constrained semantics, parallel paradigms, expression and concern define key properties a parallel programming model.}
 \label{figSemCapture}
 \end{figure}
@@ -29,22 +29,22 @@ Figures~\ref{figOMPLike} and~\ref{figKokkosLike} show examples of two sample app
 Both examples provide the semantic information on what to parallelize, however, they do not expose enough abstraction primitives that would allow to map parallel execution on modern architectures efficiently. In order to define what further information is needed to express concurrency on modern computer architectures, it is important to define an~\emph{abstract machine representation} first. In the following chapters we use the words \emph{representation} and \emph{model} interchangeably. In this work the abstract machine model does not describe a computer in terms of automata theory but in terms of physical or functional components.
 
 \begin{figure}
-\begin{Verbatim}[frame=leftline]
-# pragma model parallel loop
+\begin{minted}[fontsize=\small]{c++}
+#pragma model parallel loop
 for ( size_t i = 0; i < N; ++i) {
  /* loop body */
 }
-\end{Verbatim}
+\end{minted}
 \caption{Annotations-based programming models extend the semantic of the base language through pragma annotations.}
 \label{figOMPLike}
 \end{figure}
 
 \begin{figure}
-\begin{Verbatim}[frame=leftline]
+\begin{minted}[fontsize=\small]{c++}
 model::parallel_for (N, [=] ( const size_t i) {
   /* loop body */
 });
-\end{Verbatim}
+\end{minted}
 \caption{Embedded parallel programming uses the base language and relies on programming interfaces to capture information.}
 \label{figKokkosLike}
 \end{figure}

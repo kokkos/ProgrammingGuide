@@ -45,7 +45,7 @@ version		:= 2.2.0
 #
 # This can be pdflatex or latex - you can change this by adding the following line to your Makefile.ini:
 # BUILD_STRATEGY := latex
-BUILD_STRATEGY		?= xelatex
+BUILD_STRATEGY		?= pdflatex
 #
 # Sets LC_ALL=C, by default, so that the locale-aware tools, like sort, be
 # # immune to changes to the locale in the user environment.
@@ -1083,7 +1083,7 @@ endif
 
 ifeq "$(strip $(BUILD_STRATEGY))" "pdflatex"
 default_graphic_extension	?= pdf
-latex_build_program		?= $(PDFLATEX)
+latex_build_program		?= $(PDFLATEX) -shell-escape
 build_target_extension		?= pdf
 hyperref_driver_pattern		?= hpdf.*
 hyperref_driver_error		?= Using pdflatex: specify pdftex in the hyperref options (or leave it blank).

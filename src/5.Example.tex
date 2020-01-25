@@ -20,30 +20,31 @@ While this example can only provide a brief insight into Kokkos, we recommend to
 
 \begin{figure}
 \begin{small}
-\begin{Verbatim}[frame=leftline]
+\begin{minted}[fontsize=\small]{c++}
 #include<Kokkos_Core.hpp>
 int main(int argc, char* argv[]) {
   Kokkos::initialize(argc,argv);
   {
     Kokkos::View<double*> x("x", M);  
     Kokkos::View<double*> y("y", N);
-    Kokkos::View<double**,Kokkos::LayoutRight> A("A", N, M);  
-
+    Kokkos::View<double**,Kokkos::LayoutRight> 
+                                  A("A", N, M);  
     auto x_h = Kokkos::create_mirror_view(x);
     auto y_h = Kokkos::create_mirror_view(y);
     auto A_h = Kokkos::create_mirror_view(A);
-    //intialize_data_on_host(x_h,A_h);
     Kokkos::deep_copy(x,x_h);
     Kokkos::deep_copy(A,A_h);    
 
-    Kokkos::parallel_for("outer", TeamPolicy<>(N,AUTO),
-    [=](const member_type &team_handle) {
-      const int e = team_handle.league_rank();
-      Kokkos::parallel_reduce( TeamThreadRange(team_handle, M),
-        [=](const int & i, double & y_tmp) {
-          y_tmp += A(e, i) * x(i);
-        }, 
-        y(e));
+    Kokkos::parallel_for("outer", 
+      TeamPolicy<>(N,AUTO),
+      [=](const member_type &team_handle) {
+        const int e = team_handle.league_rank();
+        Kokkos::parallel_reduce( 
+          TeamThreadRange(team_handle, M),
+          [=](const int & i, double & y_tmp) {
+            y_tmp += A(e, i) * x(i);
+          }, 
+          y(e));
     }); 
     Kokkos::fence();
     Kokkos::deep_copy(y_h,y);
@@ -51,7 +52,7 @@ int main(int argc, char* argv[]) {
   }
   Kokkos::finalize();
 }
-\end{Verbatim}
+\end{minted}
 \end{small}
 \caption{This example application written in Kokkos shows the use of a~\emph{view}-type and a parallel for loop using a ~\emph{TeamPolicy} and a nested parallel reduction. }
 \label{fig:KokkosExample}
