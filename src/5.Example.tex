@@ -6,15 +6,13 @@ Further, the example code shows the use of the ~\emph{Kokkos::View} abstraction.
 
 Views are abstractions that represent data. Naturally, data can reside in host memory where it is accessible to the host execution space or on device memory where it is accessible to the device execution space. In this example, copies of the views are created to make them accessible by the host process. This is accomplished by calling the ~\emph{create\_mirror\_view} function. 
 
-If the original data is already accessible by the host process, this function returns a ~\emph{View} referencing the same allocation. In real applications, a host-accessible allocation is necessary to allow I/O operations during filesystem access. To move data to the respective memory space that is accessible by the parallel execution resources, the function ~\emph{deep\_copy} has to be invoked. In case two view objects are aliased, this operation results in a~\emph{no-op}. 
-
-Consequently, the simple example does not explicitly specify a memory space where the data lives in. However, Kokkos ensures that the defaults for parallel execution and data allocations match. 
+If the original data is already accessible by the host process, this function returns a ~\emph{View} referencing the same allocation. In real applications, a host-accessible allocation is necessary to allow I/O operations during filesystem access. To move data to the respective memory space that is accessible by the parallel execution resources, the function ~\emph{deep\_copy} has to be invoked. In case two view objects are aliased, this operation results in a~\emph{no-op}. Consequently, the simple example does not explicitly specify a memory space where the data lives in. However, Kokkos ensures that the defaults for parallel execution and data allocations match. 
 
 Taking a closer look at the loop step shows the hierarchical expression of concurrency. This is accomplished by using the ~\emph{Kokkos::TeamPolicy}. For each row of~\emph{A} a team of threads is launched, where the size of the team is not further specified. When using a ~\emph{TeamPolicy} the operator of the lambda expression does not receive an index, but rather a handle to the team of threads. 
 This handle provides the team identifier \emph{e}, and is subsequently handed to the nested parallel execution policies. The nested reduction requires the operator of the nested lambda to take a reference to the thread-local reduction variable (called here ~\emph{y\_tmp}) in addition to the loop index. It then writes the result to the correct position of the output vector. 
 The parallel loops are followed by a call to \emph{Kokkos::fence}. This ensures that the execution of the parallel code is completed before copying the results back to the host memory space. This is implemented through the~\emph{Kokkos::deep\_copy} call. Lastly, the Kokkos application calls~\emph{Kokkos::finalize}.
 
-While this example can only provide a brief insight into Kokkos, we recommend to the interested reader to access further resources. Resources include example applications for individual Kokkos features, tutorials with multiple days worth of lectures and exercises, a programming guide, and API documentation. Source code examples as well as the tutorial are located in the Kokkos repository~\cite{KOKKOS_REPO}. The tutorial is intended for students with minimal or even no prior knowledge of parallel programming. It introduces concepts of parallel programming using Kokkos through a series of lectures and hands-on exercises that build upon each other and gradually introduce new concepts. The programming guide is available on-line~\cite{KOKKOS_WIKI}. 
+While this example can only provide a brief insight into Kokkos, we recommend to the interested reader to access further resources. Resources include example applications for each individual Kokkos feature, tutorials with multiple days worth of lectures and exercises, a programming guide, and API documentation. Source code examples as well as the tutorial are located in the Kokkos repository~\cite{KOKKOS_REPO}. The tutorial is intended for students with previous knowledge of one parallel programming model and basic knowledge of C++. It introduces concepts of parallel programming using Kokkos through a series of lectures and hands-on exercises that build upon each other and gradually introduce new concepts. The programming guide is available on-line~\cite{KOKKOS_WIKI}. In chapter~\ref{chap:teaching} we provide further details on best practices obtained from teaching Kokkos as well as list feedback received from lecture attendees.
 
 \begin{figure}
 \begin{small}
@@ -32,7 +30,7 @@ int main(int argc, char* argv[]) {
     auto A_h = Kokkos::create_mirror_view(A);
     Kokkos::deep_copy(x,x_h);
     Kokkos::deep_copy(A,A_h);    
-
+    
     Kokkos::parallel_for("outer", 
       TeamPolicy<>(N,AUTO),
       [=](const member_type &team_handle) {
@@ -41,12 +39,10 @@ int main(int argc, char* argv[]) {
           TeamThreadRange(team_handle, M),
           [=](const int & i, double & y_tmp) {
             y_tmp += A(e, i) * x(i);
-          }, 
-          y(e));
+          }, y(e));
     }); 
     Kokkos::fence();
-    Kokkos::deep_copy(y_h,y);
-    //output_result_on_host(y_h);
+    Kokkos::deep_copy(y_h,y); //copy to host memory space    
   }
   Kokkos::finalize();
 }

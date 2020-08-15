@@ -1,6 +1,6 @@
 \section{The Kokkos Machine Model}\label{chap:kokkosMM}
 
-The Kokkos machine model defines abstractions that represent hardware capabilities for processing and data access. The Kokkos parallel programming model exposes these abstractions to the programmer through C++ and the Kokkos API. By abstracting from physical hardware, the machine model ensures that applications written in programming models targeting this machine model are generic and performance-portable on current and future hardware. The Kokkos parallel programming model is one particular instance of a programming model that builds on top of that machine model. We would like to point out that it is this conceptual differentiation that allows scenarios where the underlying machine model is instantiated in other languages beyond C++, yet the algorithmic specification as well as performance characteristics and portability remain the same. 
+The Kokkos machine model defines abstractions that represent hardware capabilities for processing and data access. The Kokkos parallel programming model exposes these abstractions to the programmer through C++ and the Kokkos API. By abstracting from physical hardware, the machine model ensures that applications written in any programming model that is targeting this machine model are generic and performance-portable on current and future hardware. Kokkos is one particular instance of a programming model that builds on top of that machine model. We would like to point out that it is this conceptual differentiation that allows scenarios where the underlying machine model is instantiated in other languages beyond C++, yet the algorithmic specification as well as performance characteristics and portability remain the same. 
 
 The Kokkos abstract machine representation targets a design of a future shared-memory computing architecture. The design is shown in Figure~\ref{fig:spaces}. It is characterized by multiple latency-optimized execution units and off-die bandwidth-optimized accelerators. Both compute device types can have disjoint memory address spaces with unique performance properties. In such an architecture, execution units might be hierarchically organized with multiple levels of achievable parallelism with different memory access characteristics and coherence properties of caches. In order to ensure performance portability on such a wide range of configurations, an abstraction of compute-resources and available memories is required. For this purpose, we introduce the abstract concept called \emph{space}.
 
@@ -16,7 +16,8 @@ How a machine model is exposed to the programmer and what the design considerati
 
 \begin{figure}
 
-\includegraphics[width=0.5\textwidth]{img/KokkosSpaces.png}
+\includegraphics[width=0.49\textwidth]{img/KokkosSpaces.png}
+\centering
 \caption{Spaces represent conceptual building blocks of the abstract machine model in Kokkos.}
 \label{fig:execspace}
 \label{fig:spaces}
