@@ -18,19 +18,6 @@ To capture semantic information, that is the~\emph{what}, the~\emph{where} and t
 	\item Memory traits specify how a data structure is accessed. Traits express usage scenarios such as atomic access, random access, and streaming loads or stores. This allows the programming model to optimize load and store operations.
 \end{itemize}
 
-\begin{figure}[h]
-\begin{minted}[fontsize=\small]{text}
-Constrained Semantics: Patterns (intent),
-Spaces, Layouts, Policies and Traits
-Parallel Paradigms: Parallel patterns and 
-tasking
-Expression: Embedded, C++
-Control Paradigm: descriptive
-\end{minted}
-\caption{Semantic capture defined by the Kokkos programming model.}
-\label{fig:SemCaptureKokkos}
-\end{figure}
-
 \begin{figure}
 \begin{minted}[fontsize=\small]{c++}
 template <class ExecPolicy, class FunctorType>
@@ -43,6 +30,19 @@ Kokkos::parallel_for(const std::string& name,
 \end{figure}
 
 Figure~\ref{fig:parallelFor} shows one definition of the Kokkos~\emph{parallel\_for} interface. This interface accepts two template parameters and three function arguments. \emph{ExecPolicy} shapes the iteration space for a particular execution space. Examples of execution policies are the~\emph{RangePolicy}, ~\emph{MDRangePolicy} and the~\emph{TeamPolicy}. As the name suggests, these policies express iteration spaces. For example, a range policy defines a one-dimensional iteration range. The MDRangePolicy represents a multi-dimensional iteration space and is used to express tightly nested loop patterns. A team policy defines a 1D iteration range, each of which is assigned to a team of threads. This policy allows the expression of hierarchical parallelism. The second template parameter,~\emph{FunctorType}, represent a functor that implements the~\emph{()-operator} with a matching signature for the given execution policy. The functor can be defined using a C++ class, struct or lambda expression. We would like to highlight that the return semantic of the parallel\_for is defined as \emph{potentially asynchronous}. To guarantee a kernel has finished, a developer should call the fence of the execution space on which the kernel is being executed. Otherwise, it depends on the execution space where the loop executes and whether this execution space implements a barrier. 
+
+\begin{figure}[h]
+\begin{minted}[fontsize=\small]{text}
+Constrained Semantics: Patterns (intent),
+Spaces, Layouts, Policies and Traits
+Parallel Paradigms: Parallel patterns and 
+tasking
+Expression: Embedded, C++
+Control Paradigm: descriptive
+\end{minted}
+\caption{Semantic capture defined by the Kokkos programming model.}
+\label{fig:SemCaptureKokkos}
+\end{figure}
 
 The semantic of the parallel\_for class in Kokkos demonstrates the descriptive nature of the programming model. Programming with patterns and abstractions allows the compiler to generate optimized transformations. 
 Generally, parallel patterns in Kokkos do not guarantee iteration ordering nor the degree of concurrency during their execution. This gives the freedom to the underlying abstraction layers to implement different mapping patterns on different hardware such as the assignment of iterations to threads or vector lanes. We believe that these abstractions and their descriptive semantic represent key programming primitives and the way forward for generic support for parallel programming. In conclusion, Figure~\ref{fig:SemCaptureKokkos} shows the semantic capture defined by the Kokkos programming model. Figure~\ref{fig:abstractions} summarizes patterns and abstractions and structures them by information type in the semantic capture.
