@@ -34,15 +34,16 @@ int main(int argc, char* argv[]) {
     Kokkos::parallel_for("outer", 
       TeamPolicy<>(N,AUTO),
       [=](const member_type &team_handle) {
-        const int e = team_handle.league_rank();
+        const int e=team_handle.league_rank();
         Kokkos::parallel_reduce( 
           TeamThreadRange(team_handle, M),
-          [=](const int & i, double & y_tmp) {
+          [=](const int & i, double & y_tmp){
             y_tmp += A(e, i) * x(i);
           }, y(e));
     }); 
     Kokkos::fence();
-    Kokkos::deep_copy(y_h,y); //copy to host memory space    
+    //copy to host memory space    
+    Kokkos::deep_copy(y_h,y); 
   }
   Kokkos::finalize();
 }
